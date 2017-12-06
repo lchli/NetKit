@@ -19,8 +19,9 @@ import okhttp3.internal.platform.Platform;
 public final class NetKit {
     private static final String TAG = "NetKit";
     private static final Handler handler = new Handler(Looper.getMainLooper());
-    private static final FileManager fileManager = new FileManager();
-    private static final StringRequest stringRequest = new StringRequest();
+
+    private static FileManager fileManager;
+    private static StringRequest stringRequest;
     private static boolean logEnable = false;
     private static OkHttpClient client;
 
@@ -38,6 +39,9 @@ public final class NetKit {
                 .response("Response")
                 .addHeader("version", BuildConfig.VERSION_NAME)
                 .build()).build();
+
+        fileManager = new FileManager();
+        stringRequest = new StringRequest();
     }
 
     public static OkHttpClient client() {
