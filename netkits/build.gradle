@@ -36,5 +36,6 @@ dependencies {
     compile('com.github.ihsanbal:LoggingInterceptor:2.0.3') {
         exclude group: 'org.json', module: 'json'
     }
+    compile 'com.github.lchli:AndroidPinnedRecyclerView:1.0.0'
 
 }
