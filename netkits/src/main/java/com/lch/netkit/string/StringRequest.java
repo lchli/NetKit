@@ -3,6 +3,7 @@ package com.lch.netkit.string;
 import android.support.annotation.NonNull;
 
 import com.lch.netkit.NetKit;
+import com.lch.netkit.file.helper.NetworkError;
 
 import java.util.Iterator;
 import java.util.Map;
@@ -200,4 +201,132 @@ public class StringRequest {
     }
 
 
+    @NonNull
+    public <T> ResponseValue<T> getSync(@NonNull final StringRequestParams params, @NonNull final Parser<T> parser) {
+
+        ResponseValue<T> responseValue = new ResponseValue<>();
+
+        try {
+
+            Request.Builder requestBuilder = new Request.Builder();
+
+            String url = params.getUrl();
+            if (!url.contains("?")) {
+                url += "?";
+            }
+            if (!url.endsWith("?")) {
+                url += "&";
+            }
+
+            StringBuilder sb = new StringBuilder(url);
+
+            Iterator<Map.Entry<String, String>> paramIter = params.textParams();
+            while (paramIter.hasNext()) {
+                Map.Entry<String, String> next = paramIter.next();
+                sb.append(next.getKey()).append("=").append(next.getValue()).append("&");
+            }
+            url = sb.toString();
+
+            Iterator<Map.Entry<String, String>> headers = params.headers();
+            while (headers.hasNext()) {
+                Map.Entry<String, String> next = paramIter.next();
+                requestBuilder.addHeader(next.getKey(), next.getValue());
+            }
+
+            requestBuilder.url(url)
+                    .get();
+
+
+            final Response response = NetKit.client().newCall(requestBuilder.build()).execute();
+            if (!response.isSuccessful()) {
+
+                responseValue.err = new NetworkError(response.message());
+
+                return responseValue;
+            }
+
+            ResponseBody body = response.body();
+            if (body == null) {
+                responseValue.err = new NetworkError("response body is null");
+
+                return responseValue;
+            }
+
+            responseValue.data = parser.parse(body.string());
+
+            return responseValue;
+
+
+        } catch (final Throwable e) {
+            e.printStackTrace();
+            responseValue.err = new NetworkError(e.getMessage());
+
+            return responseValue;
+        }
+
+    }
+
+
+    @NonNull
+    public <T> ResponseValue<T> postSync(@NonNull final StringRequestParams params, @NonNull final Parser<T> parser) {
+
+        ResponseValue<T> responseValue = new ResponseValue<>();
+
+        try {
+            Request.Builder requestBuilder = new Request.Builder();
+            FormBody.Builder formBuilder = new FormBody.Builder();
+
+            String url = params.getUrl();
+
+
+            Iterator<Map.Entry<String, String>> paramIter = params.textParams();
+            while (paramIter.hasNext()) {
+                Map.Entry<String, String> next = paramIter.next();
+                formBuilder.add(next.getKey(), next.getValue());
+            }
+
+            Iterator<Map.Entry<String, String>> headers = params.headers();
+            while (headers.hasNext()) {
+                Map.Entry<String, String> next = paramIter.next();
+                requestBuilder.addHeader(next.getKey(), next.getValue());
+            }
+
+            if (params.getRequestBody() != null) {
+                requestBuilder.url(url)
+                        .post(params.getRequestBody());
+            } else {
+                requestBuilder.url(url)
+                        .post(formBuilder.build());
+            }
+
+
+            final Response response = NetKit.client().newCall(requestBuilder.build()).execute();
+            if (!response.isSuccessful()) {
+
+                responseValue.err = new NetworkError(response.message());
+
+                return responseValue;
+            }
+
+            ResponseBody body = response.body();
+            if (body == null) {
+                responseValue.err = new NetworkError("response body is null.");
+
+                return responseValue;
+            }
+
+            responseValue.data = parser.parse(body.string());
+
+            return responseValue;
+
+
+        } catch (final Throwable e) {
+            e.printStackTrace();
+            responseValue.err = new NetworkError(e.getMessage());
+
+            return responseValue;
+        }
+
+
+    }
 }

@@ -4,8 +4,10 @@ import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 
 import com.lch.netkit.NetKit;
+import com.lch.netkit.file.helper.NetworkError;
 import com.lch.netkit.string.Callback;
 import com.lch.netkit.string.Parser;
+import com.lch.netkit.string.ResponseValue;
 import com.lch.netkit.string.StringRequestParams;
 
 public class MainActivity extends AppCompatActivity {
@@ -34,6 +36,18 @@ public class MainActivity extends AppCompatActivity {
 
             }
         });
+
+
+        ResponseValue<Object> res = NetKit.stringRequest().getSync(new StringRequestParams(), new Parser<Object>() {
+            @Override
+            public Object parse(String responseString) {
+                return null;
+            }
+        });
+
+        Object data = res.data;
+        NetworkError err = res.err;
+
 
     }
 }
