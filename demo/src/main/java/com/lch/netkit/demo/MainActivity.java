@@ -5,6 +5,7 @@ import android.support.v7.app.AppCompatActivity;
 
 import com.lch.netkit.NetKit;
 import com.lch.netkit.file.helper.NetworkError;
+import com.lch.netkit.imageloader.LiImageLoader;
 import com.lch.netkit.string.Callback;
 import com.lch.netkit.string.Parser;
 import com.lch.netkit.string.ResponseValue;
@@ -19,6 +20,8 @@ public class MainActivity extends AppCompatActivity {
 
         NetKit.setLogEnable(true);
         NetKit.init();
+
+        LiImageLoader.instance().init(LiImageLoader.newSetting(this));
 
         NetKit.stringRequest().get(new StringRequestParams().setUrl("http://api.babytree.com/api/mobile_baby/set_baby_info?pwd=123&name=lich"), new Parser<String>() {
             @Override
