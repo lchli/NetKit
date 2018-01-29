@@ -7,7 +7,6 @@ import java.util.List;
 
 public class UploadFileParams extends CommonParams<UploadFileParams> {
 
-    private static final String QI_NIU_TOKEN = "QI_NIU_TOKEN";
 
     private UploadFileParams() {
     }
@@ -18,7 +17,6 @@ public class UploadFileParams extends CommonParams<UploadFileParams> {
     }
 
     public enum ServerType {
-        QI_NIU,
         URL_DEFINED
     }
 
@@ -43,14 +41,6 @@ public class UploadFileParams extends CommonParams<UploadFileParams> {
         return fileOptionList.iterator();
     }
 
-    public UploadFileParams setQiNiuToken(String token) {
-        addParam(QI_NIU_TOKEN, token);
-        return thisObject();
-    }
-
-    public String getQiNiuToken() {
-        return textParam(QI_NIU_TOKEN);
-    }
 
     public static UploadFileParams newInstance() {
         return new UploadFileParams();

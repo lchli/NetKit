@@ -19,12 +19,17 @@ public abstract class CommonParams<T extends CommonParams> {
     protected abstract T thisObject();
 
     public T addParam(String key, String value) {
-        params.put(key, value);
+        if (key != null && value != null) {
+            params.put(key, value);
+        }
+
         return thisObject();
     }
 
     public T addHeader(String key, String value) {
-        headers.put(key, value);
+        if (key != null && value != null) {
+            headers.put(key, value);
+        }
         return thisObject();
     }
 
