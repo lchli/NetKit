@@ -12,7 +12,7 @@ import com.lch.netkit.file.helper.FileOptions;
 import com.lch.netkit.file.helper.FileResponse;
 import com.lch.netkit.file.helper.FileTransferListener;
 import com.lch.netkit.file.helper.FileTransferState;
-import com.lch.netkit.file.helper.NetworkError;
+import com.lch.netkit.common.mvc.MvcError;
 import com.lch.netkit.file.helper.UploadFileParams;
 import com.lch.netkit.file.transfer.FileTransfer;
 
@@ -66,13 +66,13 @@ public class FileTransferImpl extends FileTransfer {
         final FileTransferListener listener = lsn != null ? lsn : FileTransferListener.DEF_LISTENER;
 
         if (fileParams == null) {
-            onError(new NetworkError("fileParams is null."), listener);
+            onError(new MvcError("fileParams is null."), listener);
             return null;
         }
         final Iterator<FileOptions> filesIter = fileParams.files();
 
         if (TextUtils.isEmpty(fileParams.getUrl())) {
-            onError(new NetworkError("uploadUrl is empty."), listener);
+            onError(new MvcError("uploadUrl is empty."), listener);
             return null;
         }
         final String requestID = UUID.randomUUID().toString();
@@ -138,18 +138,18 @@ public class FileTransferImpl extends FileTransfer {
 
                 try {
                     if (state.isCanceled()) {
-                        onError(new NetworkError("canceled!"), listener);
+                        onError(new MvcError("canceled!"), listener);
                         return;
                     }
 
                     final Response response = call.execute();
                     if (!response.isSuccessful()) {
-                        onError(new NetworkError(response.code(), response.message()), listener);
+                        onError(new MvcError(response.code(), response.message()), listener);
                         return;
                     }
                     ResponseBody body = response.body();
                     if (body == null) {
-                        onError(new NetworkError(response.code(), "response body is null"), listener);
+                        onError(new MvcError(response.code(), "response body is null"), listener);
                         return;
                     }
                     FileResponse respondData = new FileResponse();
@@ -159,7 +159,7 @@ public class FileTransferImpl extends FileTransfer {
 
                 } catch (final Exception e) {
                     e.printStackTrace();
-                    onError(new NetworkError(e.getMessage()), listener);
+                    onError(new MvcError(e.getMessage()), listener);
                 } finally {
                     calls.remove(requestID);
                 }
@@ -176,22 +176,22 @@ public class FileTransferImpl extends FileTransfer {
         final FileTransferListener listener = lsn != null ? lsn : FileTransferListener.DEF_LISTENER;
 
         if (fileParams == null) {
-            onError(new NetworkError("fileParams is null."), listener);
+            onError(new MvcError("fileParams is null."), listener);
             return null;
         }
         if (TextUtils.isEmpty(fileParams.getUrl())) {
-            onError(new NetworkError("file url is empty."), listener);
+            onError(new MvcError("file url is empty."), listener);
             return null;
         }
         if (TextUtils.isEmpty(fileParams.getSaveDir())) {
-            onError(new NetworkError("file save dir is invalid."), listener);
+            onError(new MvcError("file save dir is invalid."), listener);
             return null;
         }
         final String requestID = EncryptUtils.encryptMD5ToString(fileParams.getUrl());
 
         FileTransferState stateOld = getFileTransferState(requestID);
         if (stateOld != null) {
-            onError(new NetworkError("file is already downloading."), listener);
+            onError(new MvcError("file is already downloading."), listener);
             return requestID;
         }
 
@@ -243,20 +243,20 @@ public class FileTransferImpl extends FileTransfer {
                     state.setCall(call);
 
                     if (state.isCanceled()) {
-                        onError(new NetworkError("canceled!"), listener);
+                        onError(new MvcError("canceled!"), listener);
                         return;
                     }
 
                     final Response response = call.execute();
 
                     if (!response.isSuccessful()) {
-                        onError(new NetworkError(response.code(), response.message()), listener);
+                        onError(new MvcError(response.code(), response.message()), listener);
                         return;
                     }
 
                     ResponseBody body = response.body();
                     if (body == null) {
-                        onError(new NetworkError(response.code(), "response body is null"), listener);
+                        onError(new MvcError(response.code(), "response body is null"), listener);
                         return;
                     }
 
@@ -296,7 +296,7 @@ public class FileTransferImpl extends FileTransfer {
 
                 } catch (final Exception e) {
                     e.printStackTrace();
-                    onError(new NetworkError(e.getMessage()), listener);
+                    onError(new MvcError(e.getMessage()), listener);
 
                 } finally {
                     IOUtils.closeQuietly(is, fos);

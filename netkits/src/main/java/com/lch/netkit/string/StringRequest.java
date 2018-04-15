@@ -3,7 +3,8 @@ package com.lch.netkit.string;
 import android.support.annotation.NonNull;
 
 import com.lch.netkit.NetKit;
-import com.lch.netkit.file.helper.NetworkError;
+import com.lch.netkit.common.mvc.MvcError;
+import com.lch.netkit.common.mvc.ResponseValue;
 
 import java.util.Iterator;
 import java.util.Map;
@@ -240,14 +241,14 @@ public class StringRequest {
             final Response response = NetKit.client().newCall(requestBuilder.build()).execute();
             if (!response.isSuccessful()) {
 
-                responseValue.err = new NetworkError(response.message());
+                responseValue.err = new MvcError(response.message());
 
                 return responseValue;
             }
 
             ResponseBody body = response.body();
             if (body == null) {
-                responseValue.err = new NetworkError("response body is null");
+                responseValue.err = new MvcError("response body is null");
 
                 return responseValue;
             }
@@ -259,7 +260,7 @@ public class StringRequest {
 
         } catch (final Throwable e) {
             e.printStackTrace();
-            responseValue.err = new NetworkError(e.getMessage());
+            responseValue.err = new MvcError(e.getMessage());
 
             return responseValue;
         }
@@ -303,14 +304,14 @@ public class StringRequest {
             final Response response = NetKit.client().newCall(requestBuilder.build()).execute();
             if (!response.isSuccessful()) {
 
-                responseValue.err = new NetworkError(response.message());
+                responseValue.err = new MvcError(response.message());
 
                 return responseValue;
             }
 
             ResponseBody body = response.body();
             if (body == null) {
-                responseValue.err = new NetworkError("response body is null.");
+                responseValue.err = new MvcError("response body is null.");
 
                 return responseValue;
             }
@@ -322,7 +323,7 @@ public class StringRequest {
 
         } catch (final Throwable e) {
             e.printStackTrace();
-            responseValue.err = new NetworkError(e.getMessage());
+            responseValue.err = new MvcError(e.getMessage());
 
             return responseValue;
         }

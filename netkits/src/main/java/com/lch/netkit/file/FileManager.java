@@ -4,7 +4,7 @@ package com.lch.netkit.file;
 import com.lch.netkit.file.helper.DownloadFileParams;
 import com.lch.netkit.file.helper.FileTransferListener;
 import com.lch.netkit.file.helper.FileTransferState;
-import com.lch.netkit.file.helper.NetworkError;
+import com.lch.netkit.common.mvc.MvcError;
 import com.lch.netkit.file.helper.UploadFileParams;
 import com.lch.netkit.file.transfer.FileTransfer;
 import com.lch.netkit.file.transfer.impl.FileTransferImpl;
@@ -34,7 +34,7 @@ public class FileManager {
             return chooseFileHelper(fileParams.getServerType()).uploadFile(fileParams, listener);
         } catch (final Exception e) {
             e.printStackTrace();
-            FileTransfer.onError(new NetworkError(e.getMessage()), listener);
+            FileTransfer.onError(new MvcError(e.getMessage()), listener);
             return null;
         }
     }
@@ -51,7 +51,7 @@ public class FileManager {
             return mBBTFileTransfer.downloadFile(fileParams, listener);
         } catch (final Exception e) {
             e.printStackTrace();
-            FileTransfer.onError(new NetworkError(e.getMessage()), listener);
+            FileTransfer.onError(new MvcError(e.getMessage()), listener);
             return null;
         }
     }

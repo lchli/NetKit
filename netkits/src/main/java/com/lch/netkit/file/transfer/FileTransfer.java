@@ -6,7 +6,7 @@ import com.lch.netkit.file.helper.DownloadFileParams;
 import com.lch.netkit.file.helper.FileResponse;
 import com.lch.netkit.file.helper.FileTransferListener;
 import com.lch.netkit.file.helper.FileTransferState;
-import com.lch.netkit.file.helper.NetworkError;
+import com.lch.netkit.common.mvc.MvcError;
 import com.lch.netkit.file.helper.UploadFileParams;
 
 import java.util.HashMap;
@@ -37,7 +37,7 @@ public abstract class FileTransfer {
         return calls.get(requestID);
     }
 
-    public static void onError(final NetworkError error, final FileTransferListener listener) {
+    public static void onError(final MvcError error, final FileTransferListener listener) {
         NetKit.runInUI(new Runnable() {
             @Override
             public void run() {

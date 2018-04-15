@@ -4,11 +4,11 @@ import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 
 import com.lch.netkit.NetKit;
-import com.lch.netkit.file.helper.NetworkError;
+import com.lch.netkit.common.mvc.MvcError;
 import com.lch.netkit.imageloader.LiImageLoader;
 import com.lch.netkit.string.Callback;
 import com.lch.netkit.string.Parser;
-import com.lch.netkit.string.ResponseValue;
+import com.lch.netkit.common.mvc.ResponseValue;
 import com.lch.netkit.string.StringRequestParams;
 
 public class MainActivity extends AppCompatActivity {
@@ -49,7 +49,7 @@ public class MainActivity extends AppCompatActivity {
         });
 
         Object data = res.data;
-        NetworkError err = res.err;
+        MvcError err = res.err;
 
 
     }
