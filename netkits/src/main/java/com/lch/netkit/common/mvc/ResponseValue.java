@@ -18,5 +18,12 @@ public class ResponseValue<DATA> {
         return err != null ? err.msg : "";
     }
 
+    public void setErrMsg(String msg) {
+        err = new MvcError(msg);
+    }
+
+    public void setErrMsg(int code,String msg) {
+        err = new MvcError(code, msg);
+    }
 
 }

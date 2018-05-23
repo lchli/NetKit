@@ -1,18 +1,22 @@
 package com.lch.netkit.file;
 
 
+import android.support.annotation.NonNull;
+
+import com.lch.netkit.common.mvc.ResponseValue;
 import com.lch.netkit.file.helper.DownloadFileParams;
-import com.lch.netkit.file.helper.FileTransferListener;
-import com.lch.netkit.file.helper.FileTransferState;
-import com.lch.netkit.common.mvc.MvcError;
+import com.lch.netkit.file.helper.FileTransferCallback;
 import com.lch.netkit.file.helper.UploadFileParams;
 import com.lch.netkit.file.transfer.FileTransfer;
 import com.lch.netkit.file.transfer.impl.FileTransferImpl;
+import com.lch.netkit.string.Parser;
+
+import java.io.File;
 
 /**
  * 文件传输管理器。
  */
-public class FileManager {
+public class FileManager extends FileTransfer {
 
 
     private FileTransfer mBBTFileTransfer = null;
@@ -29,14 +33,9 @@ public class FileManager {
      * @param listener   传输监听器。
      * @return requestID 如果成功；否则返回null。
      */
-    public String uploadFile(UploadFileParams fileParams, final FileTransferListener listener) {
-        try {
-            return chooseFileHelper(fileParams.getServerType()).uploadFile(fileParams, listener);
-        } catch (final Exception e) {
-            e.printStackTrace();
-            FileTransfer.onError(new MvcError(e.getMessage()), listener);
-            return null;
-        }
+    @Override
+    public <T> String uploadFile(UploadFileParams fileParams, @NonNull final Parser<T> parser, @NonNull final FileTransferCallback<T> listener) {
+        return chooseFileHelper(fileParams.getServerType()).uploadFile(fileParams, parser, listener);
     }
 
     /**
@@ -46,34 +45,23 @@ public class FileManager {
      * @param listener   传输监听器。
      * @return requestID 如果成功；否则返回null。
      */
-    public String downloadFile(DownloadFileParams fileParams, final FileTransferListener listener) {
-        try {
-            return mBBTFileTransfer.downloadFile(fileParams, listener);
-        } catch (final Exception e) {
-            e.printStackTrace();
-            FileTransfer.onError(new MvcError(e.getMessage()), listener);
-            return null;
-        }
-    }
+    @Override
+    public String downloadFile(DownloadFileParams fileParams, @NonNull final FileTransferCallback<File> listener) {
+        return mBBTFileTransfer.downloadFile(fileParams, listener);
 
-    /**
-     * 获取文件的传输状态。
-     *
-     * @param requestID 请求id
-     * @return FileTransferState 如果成功；否则返回null。
-     */
-    public FileTransferState getFileTransferState(String requestID) {
-        return FileTransfer.getFileTransferState(requestID);
     }
 
 
-    /**
-     * 取消本次传输请求。
-     *
-     * @param requestID 请求id
-     */
-    public void cancel(String requestID) {
-        FileTransfer.cancel(requestID);
+    @NonNull
+    @Override
+    public <T> ResponseValue<T> uploadFileSync(UploadFileParams fileParams, @NonNull Parser<T> parser) {
+        return mBBTFileTransfer.uploadFileSync(fileParams, parser);
+    }
+
+    @NonNull
+    @Override
+    public ResponseValue<File> downloadFileSync(DownloadFileParams fileParams) {
+        return mBBTFileTransfer.downloadFileSync(fileParams);
     }
 
 

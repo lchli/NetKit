@@ -1,14 +1,16 @@
 package com.lch.netkit.file.transfer;
 
 
-import com.lch.netkit.NetKit;
-import com.lch.netkit.file.helper.DownloadFileParams;
-import com.lch.netkit.file.helper.FileResponse;
-import com.lch.netkit.file.helper.FileTransferListener;
-import com.lch.netkit.file.helper.FileTransferState;
-import com.lch.netkit.common.mvc.MvcError;
-import com.lch.netkit.file.helper.UploadFileParams;
+import android.support.annotation.NonNull;
 
+import com.lch.netkit.common.mvc.ResponseValue;
+import com.lch.netkit.file.helper.DownloadFileParams;
+import com.lch.netkit.file.helper.FileTransferCallback;
+import com.lch.netkit.file.helper.FileTransferState;
+import com.lch.netkit.file.helper.UploadFileParams;
+import com.lch.netkit.string.Parser;
+
+import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -37,34 +39,14 @@ public abstract class FileTransfer {
         return calls.get(requestID);
     }
 
-    public static void onError(final MvcError error, final FileTransferListener listener) {
-        NetKit.runInUI(new Runnable() {
-            @Override
-            public void run() {
-                listener.onError(error);
-            }
-        });
-    }
 
-    public static void onResponse(final FileResponse data, final FileTransferListener listener) {
-        NetKit.runInUI(new Runnable() {
-            @Override
-            public void run() {
-                listener.onResponse(data);
-            }
-        });
-    }
+    public abstract <T> String uploadFile(UploadFileParams fileParams, @NonNull final Parser<T> parser, @NonNull final FileTransferCallback<T> listener);
 
-    public static void onProgress(final double percent, final FileTransferListener listener) {
-        NetKit.runInUI(new Runnable() {
-            @Override
-            public void run() {
-                listener.onProgress(percent);
-            }
-        });
-    }
+    @NonNull
+    public abstract <T> ResponseValue<T> uploadFileSync(final UploadFileParams fileParams, @NonNull final Parser<T> parser);
 
-    public abstract String uploadFile(UploadFileParams fileParams, final FileTransferListener listener);
+    public abstract String downloadFile(DownloadFileParams fileParams, @NonNull final FileTransferCallback<File> listener);
 
-    public abstract String downloadFile(DownloadFileParams fileParams, final FileTransferListener listener);
+    @NonNull
+    public abstract ResponseValue<File> downloadFileSync(final DownloadFileParams fileParams);
 }

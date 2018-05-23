@@ -6,15 +6,15 @@ import android.text.TextUtils;
 
 import com.blankj.utilcode.util.EncryptUtils;
 import com.lch.netkit.NetKit;
+import com.lch.netkit.common.mvc.ResponseValue;
 import com.lch.netkit.file.helper.DownloadFileParams;
 import com.lch.netkit.file.helper.FileConst;
 import com.lch.netkit.file.helper.FileOptions;
-import com.lch.netkit.file.helper.FileResponse;
-import com.lch.netkit.file.helper.FileTransferListener;
+import com.lch.netkit.file.helper.FileTransferCallback;
 import com.lch.netkit.file.helper.FileTransferState;
-import com.lch.netkit.common.mvc.MvcError;
 import com.lch.netkit.file.helper.UploadFileParams;
 import com.lch.netkit.file.transfer.FileTransfer;
+import com.lch.netkit.string.Parser;
 
 import org.apache.commons.io.IOUtils;
 
@@ -61,20 +61,36 @@ public class FileTransferImpl extends FileTransfer {
 
 
     @Override
-    public String uploadFile(final UploadFileParams fileParams, final FileTransferListener lsn) {
+    public <T> String uploadFile(final UploadFileParams fileParams, @NonNull final Parser<T> parser, @NonNull final FileTransferCallback<T> listener) {
 
-        final FileTransferListener listener = lsn != null ? lsn : FileTransferListener.DEF_LISTENER;
+        final ResponseValue<T> res = new ResponseValue<>();
 
         if (fileParams == null) {
-            onError(new MvcError("fileParams is null."), listener);
+            res.setErrMsg("fileParams is null.");
+            NetKit.runInUI(new Runnable() {
+                @Override
+                public void run() {
+                    listener.onComplete(res);
+                }
+            });
+
             return null;
         }
+        if (TextUtils.isEmpty(fileParams.getUrl())) {
+            res.setErrMsg("file url is empty.");
+            NetKit.runInUI(new Runnable() {
+                @Override
+                public void run() {
+                    listener.onComplete(res);
+                }
+            });
+
+            return null;
+        }
+
+
         final Iterator<FileOptions> filesIter = fileParams.files();
 
-        if (TextUtils.isEmpty(fileParams.getUrl())) {
-            onError(new MvcError("uploadUrl is empty."), listener);
-            return null;
-        }
         final String requestID = UUID.randomUUID().toString();
 
         final FileTransferState state = new FileTransferState();
@@ -121,14 +137,21 @@ public class FileTransferImpl extends FileTransfer {
 
                             @Override
                             public void onRequestProgress(final long bytesWritten, final long contentLength) {
-                                float percent = formatPercent(bytesWritten, contentLength);
+                                final float percent = formatPercent(bytesWritten, contentLength);
                                 state.setProgressPercent(percent);
 
                                 if (bytesWritten < contentLength && (percent - previousPercent) < FileConst.UPDATE_PROGRESS_GAP) {
                                     return;
                                 }
                                 previousPercent = percent;
-                                onProgress(percent, listener);
+
+                                NetKit.runInUI(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        listener.onProgress(percent);
+                                    }
+                                });
+
                             }
                         }))
                         .build();
@@ -138,28 +161,62 @@ public class FileTransferImpl extends FileTransfer {
 
                 try {
                     if (state.isCanceled()) {
-                        onError(new MvcError("canceled!"), listener);
+                        res.setErrMsg("canceled");
+                        NetKit.runInUI(new Runnable() {
+                            @Override
+                            public void run() {
+                                listener.onComplete(res);
+                            }
+                        });
+
                         return;
                     }
 
                     final Response response = call.execute();
                     if (!response.isSuccessful()) {
-                        onError(new MvcError(response.code(), response.message()), listener);
+                        res.setErrMsg(response.code(), response.message());
+                        NetKit.runInUI(new Runnable() {
+                            @Override
+                            public void run() {
+                                listener.onComplete(res);
+                            }
+                        });
+
                         return;
                     }
                     ResponseBody body = response.body();
                     if (body == null) {
-                        onError(new MvcError(response.code(), "response body is null"), listener);
+                        res.setErrMsg("response body is null");
+                        NetKit.runInUI(new Runnable() {
+                            @Override
+                            public void run() {
+                                listener.onComplete(res);
+                            }
+                        });
+
                         return;
                     }
-                    FileResponse respondData = new FileResponse();
-                    respondData.setReponseString(body.string());
 
-                    onResponse(respondData, listener);
+                    res.data = parser.parse(body.string());
 
-                } catch (final Exception e) {
+                    NetKit.runInUI(new Runnable() {
+                        @Override
+                        public void run() {
+                            listener.onComplete(res);
+                        }
+                    });
+
+
+                } catch (final Throwable e) {
                     e.printStackTrace();
-                    onError(new MvcError(e.getMessage()), listener);
+                    res.setErrMsg(e.getMessage());
+                    NetKit.runInUI(new Runnable() {
+                        @Override
+                        public void run() {
+                            listener.onComplete(res);
+                        }
+                    });
+
                 } finally {
                     calls.remove(requestID);
                 }
@@ -170,30 +227,127 @@ public class FileTransferImpl extends FileTransfer {
         return requestID;
     }
 
-    @Override
-    public String downloadFile(final DownloadFileParams fileParams, final FileTransferListener lsn) {
 
-        final FileTransferListener listener = lsn != null ? lsn : FileTransferListener.DEF_LISTENER;
+    @NonNull
+    @Override
+    public <T> ResponseValue<T> uploadFileSync(final UploadFileParams fileParams, @NonNull final Parser<T> parser) {
+
+        ResponseValue<T> res = new ResponseValue<>();
+
+        try {
+
+            if (fileParams == null) {
+                res.setErrMsg("fileParams is null.");
+                return res;
+            }
+
+            final Iterator<FileOptions> filesIter = fileParams.files();
+
+            if (TextUtils.isEmpty(fileParams.getUrl())) {
+                res.setErrMsg("uploadUrl is empty.");
+                return res;
+            }
+
+            MultipartBody.Builder builder = new MultipartBody.Builder();
+            builder.setType(MultipartBody.FORM);
+
+            Iterator<Map.Entry<String, String>> textParamsIter = fileParams.textParams();
+            while (textParamsIter.hasNext()) {
+                Map.Entry<String, String> item = textParamsIter.next();
+                builder.addFormDataPart(item.getKey(), item.getValue());
+            }
+
+            while (filesIter.hasNext()) {
+                FileOptions fileOpt = filesIter.next();
+                if (fileOpt.getFile() != null) {
+                    builder.addFormDataPart(fileOpt.getFileKey(), fileOpt.getFileName(), RequestBody.create(MEDIA_TYPE_STREAM, fileOpt.getFile()));
+                } else if (fileOpt.getFilePath() != null) {
+                    builder.addFormDataPart(fileOpt.getFileKey(), fileOpt.getFileName(), RequestBody.create(MEDIA_TYPE_STREAM, new File(fileOpt.getFilePath())));
+                } else if (fileOpt.getFileBytes() != null) {
+                    builder.addFormDataPart(fileOpt.getFileKey(), fileOpt.getFileName(), RequestBody.create(MEDIA_TYPE_STREAM, fileOpt.getFileBytes()));
+                }
+            }
+
+            Request.Builder requestBuilder = new Request.Builder();
+
+            Iterator<Map.Entry<String, String>> headers = fileParams.headers();
+            while (headers.hasNext()) {
+                Map.Entry<String, String> header = headers.next();
+                requestBuilder.addHeader(header.getKey(), header.getValue());
+            }
+
+            RequestBody requestBody = builder.build();
+
+            Request request = requestBuilder
+                    .url(fileParams.getUrl())
+                    .post(requestBody)
+                    .build();
+
+            final Call call = mOkHttpClient.newCall(request);
+
+
+            final Response response = call.execute();
+            if (!response.isSuccessful()) {
+                res.setErrMsg(response.code(), response.message());
+                return res;
+            }
+
+            ResponseBody body = response.body();
+            if (body == null) {
+                res.setErrMsg(response.code(), "response body is null");
+                return res;
+            }
+
+            res.data = parser.parse(body.string());
+
+            return res;
+
+        } catch (final Throwable e) {
+            e.printStackTrace();
+            res.setErrMsg(e.getMessage());
+            return res;
+        }
+
+    }
+
+    @Override
+    public String downloadFile(final DownloadFileParams fileParams, @NonNull final FileTransferCallback<File> listener) {
+        final ResponseValue<File> res = new ResponseValue<>();
 
         if (fileParams == null) {
-            onError(new MvcError("fileParams is null."), listener);
+            res.setErrMsg("fileParams is null.");
+            NetKit.runInUI(new Runnable() {
+                @Override
+                public void run() {
+                    listener.onComplete(res);
+                }
+            });
+
             return null;
         }
         if (TextUtils.isEmpty(fileParams.getUrl())) {
-            onError(new MvcError("file url is empty."), listener);
+            res.setErrMsg("file url is empty.");
+            NetKit.runInUI(new Runnable() {
+                @Override
+                public void run() {
+                    listener.onComplete(res);
+                }
+            });
+
             return null;
         }
         if (TextUtils.isEmpty(fileParams.getSaveDir())) {
-            onError(new MvcError("file save dir is invalid."), listener);
+            res.setErrMsg("file save dir is invalid.");
+            NetKit.runInUI(new Runnable() {
+                @Override
+                public void run() {
+                    listener.onComplete(res);
+                }
+            });
+
             return null;
         }
         final String requestID = EncryptUtils.encryptMD5ToString(fileParams.getUrl());
-
-        FileTransferState stateOld = getFileTransferState(requestID);
-        if (stateOld != null) {
-            onError(new MvcError("file is already downloading."), listener);
-            return requestID;
-        }
 
         final FileTransferState state = new FileTransferState();
         calls.put(requestID, state);
@@ -201,19 +355,20 @@ public class FileTransferImpl extends FileTransfer {
         runAsync(new Runnable() {
             @Override
             public void run() {
-
-                Request.Builder requestBuilder = new Request.Builder();
-
-                Iterator<Map.Entry<String, String>> headers = fileParams.headers();
-                while (headers.hasNext()) {
-                    Map.Entry<String, String> header = headers.next();
-                    requestBuilder.addHeader(header.getKey(), header.getValue());
-                }
-
                 InputStream is = null;
                 FileOutputStream fos = null;
 
                 try {
+
+                    Request.Builder requestBuilder = new Request.Builder();
+
+                    Iterator<Map.Entry<String, String>> headers = fileParams.headers();
+                    while (headers.hasNext()) {
+                        Map.Entry<String, String> header = headers.next();
+                        requestBuilder.addHeader(header.getKey(), header.getValue());
+                    }
+
+
                     long totalLen = getUrlContentLength(fileParams.getUrl());
                     log("totalLen=%d", totalLen);
 
@@ -243,20 +398,41 @@ public class FileTransferImpl extends FileTransfer {
                     state.setCall(call);
 
                     if (state.isCanceled()) {
-                        onError(new MvcError("canceled!"), listener);
+                        res.setErrMsg("canceled");
+                        NetKit.runInUI(new Runnable() {
+                            @Override
+                            public void run() {
+                                listener.onComplete(res);
+                            }
+                        });
+
                         return;
                     }
 
                     final Response response = call.execute();
 
                     if (!response.isSuccessful()) {
-                        onError(new MvcError(response.code(), response.message()), listener);
+                        res.setErrMsg(response.code(), response.message());
+                        NetKit.runInUI(new Runnable() {
+                            @Override
+                            public void run() {
+                                listener.onComplete(res);
+                            }
+                        });
+
                         return;
                     }
 
                     ResponseBody body = response.body();
                     if (body == null) {
-                        onError(new MvcError(response.code(), "response body is null"), listener);
+                        res.setErrMsg(response.code(), "response body is null");
+                        NetKit.runInUI(new Runnable() {
+                            @Override
+                            public void run() {
+                                listener.onComplete(res);
+                            }
+                        });
+
                         return;
                     }
 
@@ -274,7 +450,7 @@ public class FileTransferImpl extends FileTransfer {
                         sum += len;
                         fos.write(buf, 0, len);
 
-                        float percent = formatPercent(sum, totalLen);
+                        final float percent = formatPercent(sum, totalLen);
                         state.setProgressPercent(percent);
 
                         if (percent - previousPercent < FileConst.UPDATE_PROGRESS_GAP) {
@@ -282,21 +458,39 @@ public class FileTransferImpl extends FileTransfer {
                         }
                         previousPercent = percent;
 
-                        onProgress(percent, listener);//只在增量大于总长度一定比例后才通知UI更新，减少UI线程的丢帧率。
+                        NetKit.runInUI(new Runnable() {
+                            @Override
+                            public void run() {
+                                listener.onProgress(percent);
+                            }
+                        });
+
                     }
 
                     sendProgress(sum, totalLen, state, listener);
 
                     fos.flush();
 
-                    FileResponse respondData = new FileResponse();
-                    respondData.setReponseFile(saveFile);
+                    res.data = saveFile;
 
-                    onResponse(respondData, listener);
+                    NetKit.runInUI(new Runnable() {
+                        @Override
+                        public void run() {
+                            listener.onComplete(res);
+                        }
+                    });
+
 
                 } catch (final Exception e) {
                     e.printStackTrace();
-                    onError(new MvcError(e.getMessage()), listener);
+                    res.setErrMsg(e.getMessage());
+
+                    NetKit.runInUI(new Runnable() {
+                        @Override
+                        public void run() {
+                            listener.onComplete(res);
+                        }
+                    });
 
                 } finally {
                     IOUtils.closeQuietly(is, fos);
@@ -309,14 +503,132 @@ public class FileTransferImpl extends FileTransfer {
 
     }
 
+
+    @NonNull
+    @Override
+    public ResponseValue<File> downloadFileSync(final DownloadFileParams fileParams) {
+
+        ResponseValue<File> res = new ResponseValue<>();
+        InputStream is = null;
+        FileOutputStream fos = null;
+
+        try {
+
+            if (fileParams == null) {
+                res.setErrMsg("fileParams is null.");
+                return res;
+            }
+
+            if (TextUtils.isEmpty(fileParams.getUrl())) {
+                res.setErrMsg("file url is empty.");
+                return res;
+            }
+
+            if (TextUtils.isEmpty(fileParams.getSaveDir())) {
+                res.setErrMsg("file save dir is invalid.");
+                return res;
+            }
+
+            Request.Builder requestBuilder = new Request.Builder();
+
+            Iterator<Map.Entry<String, String>> headers = fileParams.headers();
+            while (headers.hasNext()) {
+                Map.Entry<String, String> header = headers.next();
+                requestBuilder.addHeader(header.getKey(), header.getValue());
+            }
+
+            long totalLen = getUrlContentLength(fileParams.getUrl());
+            log("totalLen=%d", totalLen);
+
+            final String saveFileName = EncryptUtils.encryptMD5ToString(fileParams.getUrl()) + getNameFromUrl(fileParams.getUrl());
+            createFileIfNotExist(fileParams.getSaveDir());
+            final File saveFile = createFileIfNotExist(fileParams.getSaveDir() + "/" + saveFileName);
+            log("saveFile=%s", saveFile.getAbsolutePath());
+
+            long downloadedLength = saveFile.length();
+            log("downloadLength=%d", downloadedLength);
+
+            boolean append;
+            if (totalLen == -1 || downloadedLength >= totalLen) {
+                log("do not use append mode download,url=%s", fileParams.getUrl());
+                append = false;
+                downloadedLength = 0;
+            } else {//支持断点。
+                log("use append mode download,url=%s", fileParams.getUrl());
+                append = true;
+                requestBuilder.addHeader("RANGE", "bytes=" + downloadedLength + "-");
+            }
+
+            Request request = requestBuilder.get()
+                    .url(fileParams.getUrl())
+                    .build();
+            final Call call = mOkHttpClient.newCall(request);
+
+            final Response response = call.execute();
+
+            if (!response.isSuccessful()) {
+                res.setErrMsg(response.code(), response.message());
+                return res;
+            }
+
+            ResponseBody body = response.body();
+            if (body == null) {
+                res.setErrMsg("response body is null");
+                return res;
+            }
+
+            fos = new FileOutputStream(saveFile, append);
+            is = body.byteStream();
+
+            byte[] buf = new byte[DOWNLOAD_BUF];
+            float previousPercent = 0;
+            long sum = downloadedLength;
+            int len;
+
+            while ((len = is.read(buf)) != -1) {
+                sum += len;
+                fos.write(buf, 0, len);
+
+                float percent = formatPercent(sum, totalLen);
+
+                if (percent - previousPercent < FileConst.UPDATE_PROGRESS_GAP) {
+                    continue;
+                }
+                previousPercent = percent;
+
+            }
+
+            fos.flush();
+
+            res.data = saveFile;
+
+            return res;
+
+        } catch (final Throwable e) {
+            e.printStackTrace();
+            res.setErrMsg(e.getMessage());
+            return res;
+
+        } finally {
+            IOUtils.closeQuietly(is, fos);
+        }
+
+    }
+
     private void runAsync(Runnable runnable) {
         executorService.execute(runnable);
     }
 
-    private void sendProgress(long currentBytes, long totalBytes, FileTransferState state, FileTransferListener listener) {
-        float percent = formatPercent(currentBytes, totalBytes);
+    private void sendProgress(long currentBytes, long totalBytes, FileTransferState state, final FileTransferCallback<File> listener) {
+        final float percent = formatPercent(currentBytes, totalBytes);
         state.setProgressPercent(percent);
-        onProgress(percent, listener);
+
+        NetKit.runInUI(new Runnable() {
+            @Override
+            public void run() {
+                listener.onProgress(percent);
+            }
+        });
     }
 
     private static String getNameFromUrl(@NonNull String url) {
