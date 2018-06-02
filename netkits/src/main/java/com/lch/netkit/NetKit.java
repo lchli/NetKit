@@ -1,11 +1,13 @@
 package com.lch.netkit;
 
+import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
 
 import com.apkfuns.logutils.LogUtils;
 import com.ihsanbal.logging.Level;
 import com.ihsanbal.logging.LoggingInterceptor;
+import com.lch.netkit.common.tool.ContextProvider;
 import com.lch.netkit.file.FileManager;
 import com.lch.netkit.string.StringRequest;
 
@@ -25,10 +27,12 @@ public final class NetKit {
     private static boolean logEnable = false;
     private static OkHttpClient client;
 
-    public static void init() {
+    public static void init(Context context) {
         if (client != null) {
             return;
         }
+
+        ContextProvider.initContext(context);
 
         client = new OkHttpClient.Builder().addInterceptor(new LoggingInterceptor.Builder()
                 .loggable(logEnable)

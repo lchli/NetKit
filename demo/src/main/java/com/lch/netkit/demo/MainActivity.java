@@ -19,7 +19,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         NetKit.setLogEnable(true);
-        NetKit.init();
+        NetKit.init(this);
 
         LiImageLoader.instance().init(LiImageLoader.newSetting(this));
 
