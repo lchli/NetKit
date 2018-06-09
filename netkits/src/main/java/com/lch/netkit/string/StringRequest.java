@@ -47,7 +47,7 @@ public class StringRequest {
 
                     Iterator<Map.Entry<String, String>> headers = params.headers();
                     while (headers.hasNext()) {
-                        Map.Entry<String, String> next = paramIter.next();
+                        Map.Entry<String, String> next = headers.next();
                         requestBuilder.addHeader(next.getKey(), next.getValue());
                     }
 
@@ -132,7 +132,7 @@ public class StringRequest {
 
                     Iterator<Map.Entry<String, String>> headers = params.headers();
                     while (headers.hasNext()) {
-                        Map.Entry<String, String> next = paramIter.next();
+                        Map.Entry<String, String> next = headers.next();
                         requestBuilder.addHeader(next.getKey(), next.getValue());
                     }
 
@@ -230,7 +230,7 @@ public class StringRequest {
 
             Iterator<Map.Entry<String, String>> headers = params.headers();
             while (headers.hasNext()) {
-                Map.Entry<String, String> next = paramIter.next();
+                Map.Entry<String, String> next = headers.next();
                 requestBuilder.addHeader(next.getKey(), next.getValue());
             }
 
@@ -288,7 +288,7 @@ public class StringRequest {
 
             Iterator<Map.Entry<String, String>> headers = params.headers();
             while (headers.hasNext()) {
-                Map.Entry<String, String> next = paramIter.next();
+                Map.Entry<String, String> next = headers.next();
                 requestBuilder.addHeader(next.getKey(), next.getValue());
             }
 
