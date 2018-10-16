@@ -6,24 +6,12 @@ package com.lch.netkit.common.mvc;
 
 public class ResponseValue<DATA> {
 
+    public int code;
+    public String errorMsg;
     public DATA data;
 
-    public MvcError err;
-
     public boolean hasError() {
-        return err != null;
-    }
-
-    public String errMsg() {
-        return err != null ? err.msg : "";
-    }
-
-    public void setErrMsg(String msg) {
-        err = new MvcError(msg);
-    }
-
-    public void setErrMsg(int code,String msg) {
-        err = new MvcError(code, msg);
+        return this.errorMsg != null;
     }
 
 }

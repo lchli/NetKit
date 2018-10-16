@@ -1,6 +1,6 @@
 package com.lch.netkit.common.mvc;
 
-import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 /**
  * Created by bbt-team on 2018/2/5.
@@ -8,6 +8,8 @@ import android.support.annotation.NonNull;
 
 public interface ControllerCallback<DATA> {
 
-    void onComplete(@NonNull ResponseValue<DATA> responseValue);
+    public abstract void onSuccess(@Nullable DATA data);
+
+    public abstract void onError(int code, String msg);
 
 }
