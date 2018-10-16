@@ -21,6 +21,7 @@ import android.text.TextUtils;
 
 import com.lch.netkit.v2.NetKit;
 import com.lch.netkit.v2.common.Cancelable;
+import com.lch.netkit.v2.common.NetworkResponse;
 import com.lch.netkit.v2.filerequest.DownloadFileCallback;
 import com.lch.netkit.v2.filerequest.DownloadFileParams;
 import com.lch.netkit.v2.filerequest.FileOptions;
@@ -123,7 +124,7 @@ public class BBTFileTransfer implements FileTransfer {
 
                     Map<String, String> headers = fileParams.headers();
                     for (Map.Entry<String, String> header : headers.entrySet()) {
-                        if (header.getKey() != null ) {
+                        if (header.getKey() != null) {
                             requestBuilder.addHeader(header.getKey(), header.getValue());
                         }
                     }
@@ -189,6 +190,111 @@ public class BBTFileTransfer implements FileTransfer {
         return cancelable;
     }
 
+    @NonNull
+    @Override
+    public <T> NetworkResponse<T> syncUploadFile(UploadFileParams fileParams, Parser<T> parser) {
+        NetworkResponse<T> networkResponse = new NetworkResponse<>();
+        Response response = null;
+
+        try {
+
+            final List<FileOptions> filesIter = fileParams.files();
+            if (filesIter.isEmpty()) {
+                networkResponse.setErrorMsg("files is empty.");
+                return networkResponse;
+            }
+
+            if (TextUtils.isEmpty(fileParams.getUrl())) {
+                networkResponse.setErrorMsg("uploadUrl is empty.");
+                return networkResponse;
+            }
+
+            MultipartBody.Builder builder = new MultipartBody.Builder();
+            builder.setType(MultipartBody.FORM);
+
+            Map<String, String> textParamsIter = fileParams.params();
+            for (Map.Entry<String, String> entry : textParamsIter.entrySet()) {
+                if (entry.getKey() != null) {
+                    builder.addFormDataPart(entry.getKey(), entry.getValue());
+                }
+            }
+
+            for (FileOptions fileOpt : filesIter) {
+
+                if (fileOpt.getFileKey() == null) {
+                    networkResponse.setErrorMsg("you must specify a file key to upload.");
+                    return networkResponse;
+                }
+
+                if (fileOpt.getFile() != null) {
+                    builder.addFormDataPart(fileOpt.getFileKey(), fileOpt.getFileName(), RequestBody.create(MEDIA_TYPE_STREAM, fileOpt.getFile()));
+                } else if (fileOpt.getFilePath() != null) {
+                    builder.addFormDataPart(fileOpt.getFileKey(), fileOpt.getFileName(), RequestBody.create(MEDIA_TYPE_STREAM, new File(fileOpt.getFilePath())));
+                } else if (fileOpt.getFileBytes() != null) {
+                    builder.addFormDataPart(fileOpt.getFileKey(), fileOpt.getFileName(), RequestBody.create(MEDIA_TYPE_STREAM, fileOpt.getFileBytes()));
+                }
+            }
+
+            Request.Builder requestBuilder = new Request.Builder();
+
+            Map<String, String> headers = fileParams.headers();
+            for (Map.Entry<String, String> header : headers.entrySet()) {
+                if (header.getKey() != null) {
+                    requestBuilder.addHeader(header.getKey(), header.getValue());
+                }
+            }
+
+            RequestBody requestBody = builder.build();
+
+            Request request = requestBuilder
+                    .url(fileParams.getUrl())
+                    .post(new CountingRequestBody(requestBody, new CountingRequestBody.Listener() {
+                        float previousPercent = 0;
+
+                        @Override
+                        public void onRequestProgress(final long bytesWritten, final long contentLength) {
+                            final float percent = formatPercent(bytesWritten, contentLength);
+
+                            if (bytesWritten < contentLength && (percent - previousPercent) < ShareConstants.UPDATE_PROGRESS_GAP) {
+                                return;
+                            }
+                            previousPercent = percent;
+
+
+                        }
+                    }))
+                    .build();
+
+            final Call call = NetKit.client().newCall(request);
+
+            response = call.execute();
+
+            networkResponse.httpCode = response.code();
+
+            if (!response.isSuccessful()) {
+                networkResponse.setErrorMsg(response.message());
+                return networkResponse;
+            }
+
+            ResponseBody body = response.body();
+            if (body == null) {
+                networkResponse.setErrorMsg("response body is null.");
+                return networkResponse;
+            }
+            networkResponse.data = parser.parse(body.string());
+
+            return networkResponse;
+
+        } catch (final Throwable e) {
+            e.printStackTrace();
+            networkResponse.setErrorMsg(e.getMessage());
+            return networkResponse;
+
+        } finally {
+            StreamUtils.closeStreams(response);
+        }
+    }
+
     @Override
     public Cancelable downloadFile(@NonNull final DownloadFileParams fileParams, final DownloadFileCallback listener) {
 
@@ -231,7 +337,7 @@ public class BBTFileTransfer implements FileTransfer {
                     Map<String, String> paramIter = fileParams.params();
 
                     for (Map.Entry<String, String> entry : paramIter.entrySet()) {
-                        if (entry.getKey() != null ) {
+                        if (entry.getKey() != null) {
                             sb.append(entry.getKey()).append("=").append(entry.getValue()).append("&");
                         }
                     }
@@ -240,7 +346,7 @@ public class BBTFileTransfer implements FileTransfer {
 
                     Map<String, String> headers = fileParams.headers();
                     for (Map.Entry<String, String> header : headers.entrySet()) {
-                        if (header.getKey() != null ) {
+                        if (header.getKey() != null) {
                             requestBuilder.addHeader(header.getKey(), header.getValue());
                         }
                     }
@@ -338,6 +444,137 @@ public class BBTFileTransfer implements FileTransfer {
 
     }
 
+    @NonNull
+    @Override
+    public NetworkResponse<File> syncDownloadFile(DownloadFileParams fileParams) {
+        NetworkResponse<File> networkResponse = new NetworkResponse<>();
+        InputStream is = null;
+        FileOutputStream fos = null;
+        Response response = null;
+
+        try {
+
+            if (TextUtils.isEmpty(fileParams.getUrl())) {
+                networkResponse.setErrorMsg("file url is empty.");
+                return networkResponse;
+            }
+
+            if (TextUtils.isEmpty(fileParams.getSaveDir())) {
+                networkResponse.setErrorMsg("file save dir is invalid.");
+                return networkResponse;
+            }
+
+            final Request.Builder requestBuilder = new Request.Builder();
+
+            String finalUrl = fileParams.getUrl();
+
+            if (!finalUrl.contains("?")) {
+                finalUrl += "?";
+            }
+
+            if (!finalUrl.endsWith("?")) {
+                finalUrl += "&";
+            }
+
+            StringBuilder sb = new StringBuilder(finalUrl);
+
+            Map<String, String> paramIter = fileParams.params();
+
+            for (Map.Entry<String, String> entry : paramIter.entrySet()) {
+                if (entry.getKey() != null) {
+                    sb.append(entry.getKey()).append("=").append(entry.getValue()).append("&");
+                }
+            }
+
+            finalUrl = sb.toString();
+
+            Map<String, String> headers = fileParams.headers();
+            for (Map.Entry<String, String> header : headers.entrySet()) {
+                if (header.getKey() != null) {
+                    requestBuilder.addHeader(header.getKey(), header.getValue());
+                }
+            }
+
+            long totalLen = getUrlContentLength(fileParams.getUrl());
+            log("totalLen=%d", totalLen);
+
+            final String saveFileName = StringTool.md5(fileParams.getUrl()) + getNameFromUrl(fileParams.getUrl());
+            createFileIfNotExist(fileParams.getSaveDir());
+            final File saveFile = createFileIfNotExist(fileParams.getSaveDir() + "/" + saveFileName);
+            log("saveFile=%s", saveFile.getAbsolutePath());
+
+            long downloadedLength = saveFile.length();
+            log("downloadLength=%d", downloadedLength);
+
+            boolean append;
+            if (totalLen == -1 || downloadedLength >= totalLen) {
+                log("do not use append mode download,url=%s", fileParams.getUrl());
+                append = false;
+                downloadedLength = 0;
+            } else {//支持断点。
+                log("use append mode download,url=%s", fileParams.getUrl());
+                append = true;
+                requestBuilder.addHeader("RANGE", "bytes=" + downloadedLength + "-");
+            }
+
+            Request request = requestBuilder.get()
+                    .url(finalUrl)
+                    .build();
+
+            final Call call = NetKit.client().newCall(request);
+
+            response = call.execute();
+            networkResponse.httpCode = response.code();
+
+            if (!response.isSuccessful()) {
+                networkResponse.setErrorMsg(response.message());
+                return networkResponse;
+            }
+
+
+            ResponseBody body = response.body();
+            if (body == null) {
+                networkResponse.setErrorMsg("response body is null.");
+                return networkResponse;
+            }
+
+            fos = new FileOutputStream(saveFile, append);
+            is = body.byteStream();
+
+            byte[] buf = new byte[DOWNLOAD_BUF];
+            float previousPercent = 0;
+            long sum = downloadedLength;
+            int len;
+
+
+            while ((len = is.read(buf)) != -1) {
+                sum += len;
+                fos.write(buf, 0, len);
+
+                final float percent = formatPercent(sum, totalLen);
+
+                if (percent - previousPercent < ShareConstants.UPDATE_PROGRESS_GAP) {//只在增量大于总长度一定比例后才通知UI更新，减少UI线程的丢帧率。
+                    continue;
+                }
+                previousPercent = percent;
+
+            }
+
+            fos.flush();
+
+            networkResponse.data = saveFile;
+
+            return networkResponse;
+
+        } catch (final Exception e) {
+            e.printStackTrace();
+            networkResponse.setErrorMsg(e.getMessage());
+            return networkResponse;
+
+        } finally {
+            StreamUtils.closeStreams(is, fos, response);
+        }
+    }
 
     private void runAsync(Runnable runnable) {
         NetKit.Internal.runAsync(runnable);

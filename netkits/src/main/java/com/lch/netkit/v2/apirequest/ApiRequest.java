@@ -4,8 +4,8 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 import com.lch.netkit.v2.NetKit;
-import com.lch.netkit.v2.common.NetworkResponse;
 import com.lch.netkit.v2.common.Cancelable;
+import com.lch.netkit.v2.common.NetworkResponse;
 import com.lch.netkit.v2.common.RequestCallback;
 import com.lch.netkit.v2.parser.Parser;
 import com.lch.netkit.v2.util.ShareConstants;
@@ -289,7 +289,7 @@ public class ApiRequest {
 
             if (!response.isSuccessful()) {
                 responseValue.httpCode = response.code();
-                responseValue.errorMsg = response.message();
+                responseValue.setErrorMsg(response.message());
 
                 return responseValue;
             }
@@ -299,7 +299,7 @@ public class ApiRequest {
 
             if (body == null) {
                 responseValue.httpCode = response.code();
-                responseValue.errorMsg = "response body is null";
+                responseValue.setErrorMsg("response body is null");
                 return responseValue;
             }
 
@@ -317,7 +317,7 @@ public class ApiRequest {
             if (response != null) {
                 responseValue.httpCode = response.code();
             }
-            responseValue.errorMsg = e.getMessage() + "";
+            responseValue.setErrorMsg(e.getMessage());
 
             return responseValue;
 
@@ -390,7 +390,7 @@ public class ApiRequest {
 
             if (!response.isSuccessful()) {
                 responseValue.httpCode = response.code();
-                responseValue.errorMsg = response.message();
+                responseValue.setErrorMsg(response.message());
 
                 return responseValue;
 
@@ -401,7 +401,7 @@ public class ApiRequest {
 
             if (body == null) {
                 responseValue.httpCode = response.code();
-                responseValue.errorMsg = "response body is null";
+                responseValue.setErrorMsg("response body is null");
 
                 return responseValue;
 
@@ -420,7 +420,7 @@ public class ApiRequest {
             if (response != null) {
                 responseValue.httpCode = response.code();
             }
-            responseValue.errorMsg = e.getMessage() + "";
+            responseValue.setErrorMsg(e.getMessage());
 
             return responseValue;
 

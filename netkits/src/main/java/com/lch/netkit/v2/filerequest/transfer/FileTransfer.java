@@ -16,14 +16,18 @@ package com.lch.netkit.v2.filerequest.transfer;
  *
  */
 
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 import com.lch.netkit.v2.common.Cancelable;
+import com.lch.netkit.v2.common.NetworkResponse;
 import com.lch.netkit.v2.filerequest.DownloadFileCallback;
 import com.lch.netkit.v2.filerequest.DownloadFileParams;
 import com.lch.netkit.v2.filerequest.UploadFileCallback;
 import com.lch.netkit.v2.filerequest.UploadFileParams;
 import com.lch.netkit.v2.parser.Parser;
+
+import java.io.File;
 
 
 public interface FileTransfer {
@@ -32,6 +36,15 @@ public interface FileTransfer {
     @Nullable
     <T> Cancelable uploadFile(UploadFileParams fileParams, final Parser<T> parser, final UploadFileCallback<T> listener);
 
+    @NonNull
+    <T> NetworkResponse<T> syncUploadFile(UploadFileParams fileParams, final Parser<T> parser);
+
     @Nullable
     Cancelable downloadFile(DownloadFileParams fileParams, final DownloadFileCallback listener);
+
+
+    @NonNull
+    NetworkResponse<File> syncDownloadFile(DownloadFileParams fileParams);
+
+
 }

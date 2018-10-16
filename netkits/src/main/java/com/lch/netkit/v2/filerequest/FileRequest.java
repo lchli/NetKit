@@ -21,19 +21,19 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 import com.lch.netkit.v2.common.Cancelable;
+import com.lch.netkit.v2.common.NetworkResponse;
 import com.lch.netkit.v2.filerequest.transfer.FileTransfer;
 import com.lch.netkit.v2.filerequest.transfer.impl.BBTFileTransfer;
 import com.lch.netkit.v2.filerequest.transfer.impl.QiniuFileTransfer;
 import com.lch.netkit.v2.parser.Parser;
-import com.lch.netkit.v2.util.ShareConstants;
 
-import static com.lch.netkit.v2.util.CallbackUtil.onError;
+import java.io.File;
 
 
 /**
  * 文件传输管理器。
  */
-public class FileRequest {
+public class FileRequest implements FileTransfer {
 
     private FileTransfer mBBTFileTransfer;
 
@@ -55,14 +55,8 @@ public class FileRequest {
      */
     @Nullable
     public <T> Cancelable uploadFile(@NonNull UploadFileParams fileParams, @NonNull final Parser<T> parser, final UploadFileCallback<T> listener) {
-        try {
-            return chooseFileTransfer(fileParams.getServerType()).uploadFile(fileParams, parser, listener);
-        } catch (final Throwable e) {
-            e.printStackTrace();
-            onError(ShareConstants.HTTP_ERR_CODE_UNKNOWN, e.getMessage() + "", listener);
+        return chooseFileTransfer(fileParams.getServerType()).uploadFile(fileParams, parser, listener);
 
-            return null;
-        }
     }
 
     /**
@@ -74,14 +68,20 @@ public class FileRequest {
      */
     @Nullable
     public Cancelable downloadFile(@NonNull DownloadFileParams fileParams, final DownloadFileCallback listener) {
-        try {
-            return mBBTFileTransfer.downloadFile(fileParams, listener);
-        } catch (final Throwable e) {
-            e.printStackTrace();
-            onError(ShareConstants.HTTP_ERR_CODE_UNKNOWN, e.getMessage() + "", listener);
+        return mBBTFileTransfer.downloadFile(fileParams, listener);
 
-            return null;
-        }
+    }
+
+    @NonNull
+    @Override
+    public <T> NetworkResponse<T> syncUploadFile(UploadFileParams fileParams, Parser<T> parser) {
+        return chooseFileTransfer(fileParams.getServerType()).syncUploadFile(fileParams, parser);
+    }
+
+    @NonNull
+    @Override
+    public NetworkResponse<File> syncDownloadFile(DownloadFileParams fileParams) {
+        return mBBTFileTransfer.syncDownloadFile(fileParams);
     }
 
 

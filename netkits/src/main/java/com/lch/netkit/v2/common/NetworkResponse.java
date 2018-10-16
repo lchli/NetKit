@@ -5,12 +5,21 @@ import com.lch.netkit.v2.util.ShareConstants;
 
 public class NetworkResponse<DATA> {
 
-    public int httpCode= ShareConstants.HTTP_ERR_CODE_UNKNOWN;
-    public String errorMsg;
+    public int httpCode = ShareConstants.HTTP_ERR_CODE_UNKNOWN;
+    private String errorMsg;
     public DATA data;
+    private boolean hasError = false;
 
     public boolean hasError() {
-        return this.errorMsg != null;
+        return hasError;
     }
 
+    public void setErrorMsg(String errorMsg) {
+        this.errorMsg = errorMsg;
+        hasError = true;
+    }
+
+    public String getErrorMsg() {
+        return errorMsg;
+    }
 }

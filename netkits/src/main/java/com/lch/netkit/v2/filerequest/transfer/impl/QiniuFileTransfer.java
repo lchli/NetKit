@@ -20,6 +20,7 @@ import android.content.Context;
 import android.support.annotation.NonNull;
 
 import com.lch.netkit.v2.common.Cancelable;
+import com.lch.netkit.v2.common.NetworkResponse;
 import com.lch.netkit.v2.filerequest.DownloadFileCallback;
 import com.lch.netkit.v2.filerequest.DownloadFileParams;
 import com.lch.netkit.v2.filerequest.FileOptions;
@@ -42,6 +43,7 @@ import org.json.JSONObject;
 
 import java.io.File;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 
 import static com.lch.netkit.v2.util.CallbackUtil.onError;
 import static com.lch.netkit.v2.util.CallbackUtil.onProgress;
@@ -171,10 +173,155 @@ public class QiniuFileTransfer implements FileTransfer {
         return cancelable;
     }
 
+
+    @NonNull
+    @Override
+    public <T> NetworkResponse<T> syncUploadFile(UploadFileParams fileParams, final Parser<T> parser) {
+        final NetworkResponse<T> networkResponse = new NetworkResponse<>();
+
+        List<FileOptions> fileIter = fileParams.files();
+        if (fileIter.isEmpty()) {
+            networkResponse.setErrorMsg("files is empty.");
+            return networkResponse;
+        }
+
+        FileOptions fileOptions = fileIter.get(0);
+
+        final QiNiuParam qiniuParam = fileParams.getQiNiuParam();
+
+        UploadOptions uploadOptions = new UploadOptions(qiniuParam.getUploadOptionParam(), qiniuParam.getMimeType(), qiniuParam.isCheckCrc(), new UpProgressHandler() {
+
+            double previousPercent = 0;
+
+            @Override
+            public void progress(String key, final double percent) {
+
+                if (percent < 1.0F && percent - previousPercent < ShareConstants.UPDATE_PROGRESS_GAP) {
+                    return;
+                }
+                previousPercent = percent;
+
+            }
+        }, new UpCancellationSignal() {
+            @Override
+            public boolean isCancelled() {
+                return false;
+            }
+        });
+
+        if (fileOptions.getFile() != null) {
+            final CountDownLatch countDownLatch = new CountDownLatch(1);
+
+            qiNiuUploadManager.put(fileOptions.getFile(), fileOptions.getFileKey(), qiniuParam.getQiniuToken(), new UpCompletionHandler() {
+                @Override
+                public void complete(String key, ResponseInfo info, JSONObject response) {
+                    NetworkLog.e(TAG, info + "\n" + response);
+                    networkResponse.httpCode = info.statusCode;
+
+                    if (info.isOK()) {
+                        try {
+                            networkResponse.data = parser.parse(response.toString());
+                        } catch (Throwable e) {
+                            e.printStackTrace();
+                            networkResponse.setErrorMsg(e.getMessage());
+                        }
+
+                    } else {
+                        networkResponse.setErrorMsg(info.error);
+                    }
+
+                    countDownLatch.countDown();
+
+                }
+            }, uploadOptions);
+
+            try {
+                countDownLatch.await();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+        } else if (fileOptions.getFilePath() != null) {
+            final CountDownLatch countDownLatch = new CountDownLatch(1);
+
+            qiNiuUploadManager.put(fileOptions.getFilePath(), fileOptions.getFileKey(), qiniuParam.getQiniuToken(), new UpCompletionHandler() {
+                @Override
+                public void complete(String key, ResponseInfo info, JSONObject response) {
+                    NetworkLog.e(TAG, info + "\n" + response);
+                    networkResponse.httpCode = info.statusCode;
+
+                    if (info.isOK()) {
+                        try {
+                            networkResponse.data = parser.parse(response.toString());
+                        } catch (Throwable e) {
+                            e.printStackTrace();
+                            networkResponse.setErrorMsg(e.getMessage());
+                        }
+
+                    } else {
+                        networkResponse.setErrorMsg(info.error);
+                    }
+
+                    countDownLatch.countDown();
+
+                }
+            }, uploadOptions);
+
+            try {
+                countDownLatch.await();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+
+        } else if (fileOptions.getFileBytes() != null) {
+            final CountDownLatch countDownLatch = new CountDownLatch(1);
+
+            qiNiuUploadManager.put(fileOptions.getFileBytes(), fileOptions.getFileKey(), qiniuParam.getQiniuToken(), new UpCompletionHandler() {
+                @Override
+                public void complete(String key, ResponseInfo info, JSONObject response) {
+                    NetworkLog.e(TAG, info + "\n" + response);
+                    networkResponse.httpCode = info.statusCode;
+
+                    if (info.isOK()) {
+                        try {
+                            networkResponse.data = parser.parse(response.toString());
+                        } catch (Throwable e) {
+                            e.printStackTrace();
+                            networkResponse.setErrorMsg(e.getMessage());
+                        }
+
+                    } else {
+                        networkResponse.setErrorMsg(info.error);
+                    }
+
+                    countDownLatch.countDown();
+
+                }
+            }, uploadOptions);
+
+            try {
+                countDownLatch.await();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+        } else {
+            networkResponse.setErrorMsg("upload file is null.");
+        }
+
+
+        return networkResponse;
+    }
+
     @Override
     public Cancelable downloadFile(DownloadFileParams fileParams, DownloadFileCallback listener) {
         throw new UnsupportedOperationException("qi niu do not support download file now.");
     }
 
-
+    @NonNull
+    @Override
+    public NetworkResponse<File> syncDownloadFile(DownloadFileParams fileParams) {
+        throw new UnsupportedOperationException("qi niu do not support download file now.");
+    }
 }

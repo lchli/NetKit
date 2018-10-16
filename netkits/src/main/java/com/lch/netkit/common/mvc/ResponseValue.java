@@ -7,11 +7,22 @@ package com.lch.netkit.common.mvc;
 public class ResponseValue<DATA> {
 
     public int code;
-    public String errorMsg;
+    private String errorMsg;
     public DATA data;
 
+    private boolean hasError = false;
+
     public boolean hasError() {
-        return this.errorMsg != null;
+        return hasError;
+    }
+
+    public void setErrorMsg(String errorMsg) {
+        this.errorMsg = errorMsg;
+        hasError = true;
+    }
+
+    public String getErrorMsg() {
+        return errorMsg;
     }
 
 }
