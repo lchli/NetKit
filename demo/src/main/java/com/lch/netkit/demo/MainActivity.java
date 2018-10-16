@@ -1,15 +1,14 @@
 package com.lch.netkit.demo;
 
 import android.os.Bundle;
+import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 
-import com.lch.netkit.NetKit;
-import com.lch.netkit.common.mvc.MvcError;
 import com.lch.netkit.imageloader.LiImageLoader;
-import com.lch.netkit.string.Callback;
-import com.lch.netkit.string.Parser;
-import com.lch.netkit.common.mvc.ResponseValue;
-import com.lch.netkit.string.StringRequestParams;
+import com.lch.netkit.v2.NetKit;
+import com.lch.netkit.v2.apirequest.ApiRequestParams;
+import com.lch.netkit.v2.common.RequestCallback;
+import com.lch.netkit.v2.parser.Parser;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -23,33 +22,22 @@ public class MainActivity extends AppCompatActivity {
 
         LiImageLoader.instance().init(LiImageLoader.newSetting(this));
 
-        NetKit.stringRequest().get(new StringRequestParams().setUrl("http://api.babytree.com/api/mobile_baby/set_baby_info?pwd=123&name=lich"), new Parser<String>() {
+        NetKit.apiRequest().asyncGet(new ApiRequestParams().setUrl("http://api.babytree.com/api/mobile_baby/set_baby_info?pwd=123&name=lich"), new Parser<String>() {
             @Override
             public String parse(String responseString) {
                 return null;
             }
-        }, new Callback<String>() {
+        }, new RequestCallback<String>() {
             @Override
-            public void onSuccess(String parsedResult) {
+            public void onSuccess(int httpCode, @Nullable String s) {
 
             }
 
             @Override
-            public void onFail(String msg) {
+            public void onError(int httpCode, String msg) {
 
-            }
-        });
-
-
-        ResponseValue<Object> res = NetKit.stringRequest().getSync(new StringRequestParams(), new Parser<Object>() {
-            @Override
-            public Object parse(String responseString) {
-                return null;
             }
         });
-
-        Object data = res.data;
-        MvcError err = res.err;
 
 
     }

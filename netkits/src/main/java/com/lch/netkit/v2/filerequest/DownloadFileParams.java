@@ -1,4 +1,7 @@
-package com.lch.netkit.file.helper;
+package com.lch.netkit.v2.filerequest;
+
+
+import com.lch.netkit.v2.common.CommonParams;
 
 /**
  * Created by bbt-team on 2017/8/3.
