@@ -6,7 +6,7 @@ import com.lch.netkit.common.tool.UiHandler;
  * Created by Administrator on 2018/10/17.
  */
 
-public final class ControllerCallbackUtils {
+public final class CtrlCbUtils {
 
     public static void onError(final ControllerCallback controllerCallback, final int code, final String errMsg) {
         if (controllerCallback == null) {
