@@ -7,7 +7,7 @@ public abstract class UseCase<P, R> {
         return def;
     }
 
-    public void invokeAsync(final P params, final ControllerCallback<R> result) {
+    public void invokeAsync(final P params, final ControllerCallback<R> resultCallback) {
 
         getTaskExecutor().executeOnDiskIO(new Runnable() {
             @Override
@@ -15,13 +15,17 @@ public abstract class UseCase<P, R> {
 
                 final ResponseValue<R> r = execute(params);
 
+                if (resultCallback == null) {
+                    return;
+                }
+
                 getTaskExecutor().executeOnMainThread(new Runnable() {
                     @Override
                     public void run() {
                         if (r.hasError()) {
-                            result.onError(r.code, r.getErrorMsg());
+                            resultCallback.onError(r.code, r.getErrorMsg());
                         } else {
-                            result.onSuccess(r.data);
+                            resultCallback.onSuccess(r.data);
                         }
                     }
                 });
