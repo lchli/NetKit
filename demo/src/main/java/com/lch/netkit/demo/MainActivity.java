@@ -4,7 +4,6 @@ import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 
-import com.lch.netkit.imageloader.LiImageLoader;
 import com.lch.netkit.v2.NetKit;
 import com.lch.netkit.v2.apirequest.ApiRequestParams;
 import com.lch.netkit.v2.common.RequestCallback;
@@ -20,7 +19,6 @@ public class MainActivity extends AppCompatActivity {
         NetKit.setLogEnable(true);
         NetKit.init(this);
 
-        LiImageLoader.instance().init(LiImageLoader.newSetting(this));
 
         NetKit.apiRequest().asyncGet(new ApiRequestParams().setUrl("http://api.babytree.com/api/mobile_baby/set_baby_info?pwd=123&name=lich"), new Parser<String>() {
             @Override
