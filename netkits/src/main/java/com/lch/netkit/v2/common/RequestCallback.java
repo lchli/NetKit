@@ -8,8 +8,8 @@ public abstract class RequestCallback<DATA> {
         return true;
     }
 
-    public abstract void onSuccess(int httpCode, @Nullable DATA data);
+    public abstract void onSuccess(String httpCode, @Nullable DATA data);
 
-    public abstract void onError(int httpCode, String msg);
+    public abstract void onError(String httpCode, String msg);
 
 }
