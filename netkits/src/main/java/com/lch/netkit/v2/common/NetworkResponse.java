@@ -5,7 +5,7 @@ import com.lch.netkit.v2.util.ShareConstants;
 
 public class NetworkResponse<DATA> {
 
-    public int httpCode = ShareConstants.HTTP_ERR_CODE_UNKNOWN;
+    public String httpCode = ShareConstants.HTTP_ERR_CODE_UNKNOWN;
     private String errorMsg;
     public DATA data;
     private boolean hasError = false;

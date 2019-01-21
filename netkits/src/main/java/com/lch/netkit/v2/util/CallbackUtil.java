@@ -6,7 +6,7 @@ import com.lch.netkit.v2.filerequest.UploadFileCallback;
 
 public final class CallbackUtil {
 
-    public static void onSuccess(final int httpCode, final Object data, final RequestCallback callback) {
+    public static void onSuccess(final String httpCode, final Object data, final RequestCallback callback) {
         if (callback != null) {
             if (callback.isCallbackInUiThread()) {
                 NetKit.Internal.runInUI(new Runnable() {
@@ -23,7 +23,7 @@ public final class CallbackUtil {
     }
 
 
-    public static void onError(final int httpCode, final String err, final RequestCallback callback) {
+    public static void onError(final String httpCode, final String err, final RequestCallback callback) {
         if (callback != null) {
             if (callback.isCallbackInUiThread()) {
                 NetKit.Internal.runInUI(new Runnable() {

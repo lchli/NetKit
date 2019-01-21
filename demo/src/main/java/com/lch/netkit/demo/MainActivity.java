@@ -27,12 +27,12 @@ public class MainActivity extends AppCompatActivity {
             }
         }, new RequestCallback<String>() {
             @Override
-            public void onSuccess(int httpCode, @Nullable String s) {
+            public void onSuccess(String httpCode, @Nullable String s) {
 
             }
 
             @Override
-            public void onError(int httpCode, String msg) {
+            public void onError(String httpCode, String msg) {
 
             }
         });

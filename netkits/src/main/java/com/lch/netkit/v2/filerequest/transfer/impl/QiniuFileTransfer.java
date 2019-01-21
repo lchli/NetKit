@@ -20,6 +20,7 @@ import android.content.Context;
 import android.support.annotation.NonNull;
 
 import com.lch.netkit.v2.common.Cancelable;
+import com.lch.netkit.v2.common.NetKitException;
 import com.lch.netkit.v2.common.NetworkResponse;
 import com.lch.netkit.v2.filerequest.DownloadFileCallback;
 import com.lch.netkit.v2.filerequest.DownloadFileParams;
@@ -112,14 +113,19 @@ public class QiniuFileTransfer implements FileTransfer {
 
                     if (info.isOK()) {
                         try {
-                            onSuccess(info.statusCode, parser.parse(response.toString()), listener);
+                            onSuccess(info.statusCode + "", parser.parse(response.toString()), listener);
                         } catch (Throwable e) {
                             e.printStackTrace();
-                            onError(info.statusCode, e.getMessage() + "", listener);
+
+                            if (e instanceof NetKitException && ((NetKitException) e).getHttpCode() != null) {
+                                onError(((NetKitException) e).getHttpCode(), e.getMessage() + "", listener);
+                            } else {
+                                onError(info.statusCode + "", e.getMessage() + "", listener);
+                            }
                         }
 
                     } else {
-                        onError(info.statusCode, info.error, listener);
+                        onError(info.statusCode + "", info.error, listener);
                     }
 
                 }
@@ -132,14 +138,19 @@ public class QiniuFileTransfer implements FileTransfer {
 
                     if (info.isOK()) {
                         try {
-                            onSuccess(info.statusCode, parser.parse(response.toString()), listener);
+                            onSuccess(info.statusCode + "", parser.parse(response.toString()), listener);
                         } catch (Throwable e) {
                             e.printStackTrace();
-                            onError(info.statusCode, e.getMessage() + "", listener);
+
+                            if (e instanceof NetKitException && ((NetKitException) e).getHttpCode() != null) {
+                                onError(((NetKitException) e).getHttpCode(), e.getMessage() + "", listener);
+                            } else {
+                                onError(info.statusCode + "", e.getMessage() + "", listener);
+                            }
                         }
 
                     } else {
-                        onError(info.statusCode, info.error, listener);
+                        onError(info.statusCode + "", info.error, listener);
                     }
 
 
@@ -153,15 +164,21 @@ public class QiniuFileTransfer implements FileTransfer {
 
                     if (info.isOK()) {
                         try {
-                            onSuccess(info.statusCode, parser.parse(response.toString()), listener);
+                            onSuccess(info.statusCode + "", parser.parse(response.toString()), listener);
                         } catch (Throwable e) {
                             e.printStackTrace();
-                            onError(info.statusCode, e.getMessage() + "", listener);
+
+                            if (e instanceof NetKitException && ((NetKitException) e).getHttpCode() != null) {
+                                onError(((NetKitException) e).getHttpCode(), e.getMessage() + "", listener);
+                            } else {
+                                onError(info.statusCode + "", e.getMessage() + "", listener);
+                            }
                         }
 
                     } else {
-                        onError(info.statusCode, info.error, listener);
+                        onError(info.statusCode + "", info.error, listener);
                     }
+
 
                 }
             }, uploadOptions);
@@ -216,13 +233,16 @@ public class QiniuFileTransfer implements FileTransfer {
                 @Override
                 public void complete(String key, ResponseInfo info, JSONObject response) {
                     NetworkLog.e(TAG, info + "\n" + response);
-                    networkResponse.httpCode = info.statusCode;
+                    networkResponse.httpCode = info.statusCode + "";
 
                     if (info.isOK()) {
                         try {
                             networkResponse.data = parser.parse(response.toString());
                         } catch (Throwable e) {
                             e.printStackTrace();
+                            if (e instanceof NetKitException && ((NetKitException) e).getHttpCode() != null) {
+                                networkResponse.httpCode = ((NetKitException) e).getHttpCode();
+                            }
                             networkResponse.setErrorMsg(e.getMessage());
                         }
 
@@ -248,13 +268,16 @@ public class QiniuFileTransfer implements FileTransfer {
                 @Override
                 public void complete(String key, ResponseInfo info, JSONObject response) {
                     NetworkLog.e(TAG, info + "\n" + response);
-                    networkResponse.httpCode = info.statusCode;
+                    networkResponse.httpCode = info.statusCode + "";
 
                     if (info.isOK()) {
                         try {
                             networkResponse.data = parser.parse(response.toString());
                         } catch (Throwable e) {
                             e.printStackTrace();
+                            if (e instanceof NetKitException && ((NetKitException) e).getHttpCode() != null) {
+                                networkResponse.httpCode = ((NetKitException) e).getHttpCode();
+                            }
                             networkResponse.setErrorMsg(e.getMessage());
                         }
 
@@ -281,13 +304,16 @@ public class QiniuFileTransfer implements FileTransfer {
                 @Override
                 public void complete(String key, ResponseInfo info, JSONObject response) {
                     NetworkLog.e(TAG, info + "\n" + response);
-                    networkResponse.httpCode = info.statusCode;
+                    networkResponse.httpCode = info.statusCode + "";
 
                     if (info.isOK()) {
                         try {
                             networkResponse.data = parser.parse(response.toString());
                         } catch (Throwable e) {
                             e.printStackTrace();
+                            if (e instanceof NetKitException && ((NetKitException) e).getHttpCode() != null) {
+                                networkResponse.httpCode = ((NetKitException) e).getHttpCode();
+                            }
                             networkResponse.setErrorMsg(e.getMessage());
                         }
 

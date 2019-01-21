@@ -21,6 +21,7 @@ import android.text.TextUtils;
 
 import com.lch.netkit.v2.NetKit;
 import com.lch.netkit.v2.common.Cancelable;
+import com.lch.netkit.v2.common.NetKitException;
 import com.lch.netkit.v2.common.NetworkResponse;
 import com.lch.netkit.v2.filerequest.DownloadFileCallback;
 import com.lch.netkit.v2.filerequest.DownloadFileParams;
@@ -90,6 +91,7 @@ public class BBTFileTransfer implements FileTransfer {
             @Override
             public void run() {
                 Response response = null;
+                String responseCode = ShareConstants.HTTP_ERR_CODE_UNKNOWN;
 
                 try {
 
@@ -106,7 +108,7 @@ public class BBTFileTransfer implements FileTransfer {
                     for (FileOptions fileOpt : filesIter) {
 
                         if (fileOpt.getFileKey() == null) {
-                            onError(ShareConstants.HTTP_ERR_CODE_UNKNOWN, "you must specify a file key to upload.", listener);
+                            onError(responseCode, "you must specify a file key to upload.", listener);
 
                             return;
                         }
@@ -133,7 +135,7 @@ public class BBTFileTransfer implements FileTransfer {
 
                     Request request = requestBuilder
                             .url(fileParams.getUrl())
-                            .post(new CountingRequestBody(requestBody, new CountingRequestBody.Listener() {
+                            .post(new BBTFileTransfer.CountingRequestBody(requestBody, new BBTFileTransfer.CountingRequestBody.Listener() {
                                 float previousPercent = 0;
 
                                 @Override
@@ -152,7 +154,7 @@ public class BBTFileTransfer implements FileTransfer {
                             .build();
 
                     if (cancelable.isCanceled()) {
-                        onError(ShareConstants.HTTP_ERR_CODE_UNKNOWN, "canceled", listener);
+                        onError(responseCode, "canceled", listener);
                         return;
                     }
 
@@ -160,25 +162,29 @@ public class BBTFileTransfer implements FileTransfer {
                     cancelable.setCall(call);
 
                     response = call.execute();
+                    responseCode = response.code() + "";
 
                     if (!response.isSuccessful()) {
-                        onError(response.code(), response.message(), listener);
+                        onError(responseCode, response.message(), listener);
                         return;
                     }
 
                     ResponseBody body = response.body();
                     if (body == null) {
-                        onError(response.code(), "response body is null.", listener);
+                        onError(responseCode, "response body is null.", listener);
                         return;
                     }
 
-                    onSuccess(response.code(), parser.parse(body.string()), listener);
+                    onSuccess(responseCode, parser.parse(body.string()), listener);
 
                 } catch (final Throwable e) {
                     e.printStackTrace();
 
-                    int code = response != null ? response.code() : ShareConstants.HTTP_ERR_CODE_UNKNOWN;
-                    onError(code, e.getMessage() + "", listener);
+                    if (e instanceof NetKitException && ((NetKitException) e).getHttpCode() != null) {
+                        responseCode = ((NetKitException) e).getHttpCode();
+                    }
+
+                    onError(responseCode, e.getMessage() + "", listener);
 
                 } finally {
                     StreamUtils.closeStreams(response);
@@ -269,7 +275,7 @@ public class BBTFileTransfer implements FileTransfer {
 
             response = call.execute();
 
-            networkResponse.httpCode = response.code();
+            networkResponse.httpCode = response.code() + "";
 
             if (!response.isSuccessful()) {
                 networkResponse.setErrorMsg(response.message());
@@ -287,7 +293,13 @@ public class BBTFileTransfer implements FileTransfer {
 
         } catch (final Throwable e) {
             e.printStackTrace();
+
+            if (e instanceof NetKitException && ((NetKitException) e).getHttpCode() != null) {
+                networkResponse.httpCode = ((NetKitException) e).getHttpCode();
+            }
+
             networkResponse.setErrorMsg(e.getMessage());
+
             return networkResponse;
 
         } finally {
@@ -316,7 +328,7 @@ public class BBTFileTransfer implements FileTransfer {
                 InputStream is = null;
                 FileOutputStream fos = null;
                 Response response = null;
-                int code = ShareConstants.HTTP_ERR_CODE_UNKNOWN;
+                String code = ShareConstants.HTTP_ERR_CODE_UNKNOWN;
 
                 try {
 
@@ -386,7 +398,7 @@ public class BBTFileTransfer implements FileTransfer {
                     cancelable.setCall(call);
 
                     response = call.execute();
-                    code = response.code();
+                    code = response.code() + "";
 
                     if (!response.isSuccessful()) {
                         onError(code, response.message(), listener);
@@ -429,7 +441,7 @@ public class BBTFileTransfer implements FileTransfer {
 
                     onSuccess(code, saveFile, listener);
 
-                } catch (final Exception e) {
+                } catch (final Throwable e) {
                     e.printStackTrace();
 
                     onError(code, e.getMessage() + "", listener);
@@ -524,7 +536,7 @@ public class BBTFileTransfer implements FileTransfer {
             final Call call = NetKit.client().newCall(request);
 
             response = call.execute();
-            networkResponse.httpCode = response.code();
+            networkResponse.httpCode = response.code() + "";
 
             if (!response.isSuccessful()) {
                 networkResponse.setErrorMsg(response.message());
@@ -566,7 +578,7 @@ public class BBTFileTransfer implements FileTransfer {
 
             return networkResponse;
 
-        } catch (final Exception e) {
+        } catch (final Throwable e) {
             e.printStackTrace();
             networkResponse.setErrorMsg(e.getMessage());
             return networkResponse;
