@@ -1,6 +1,7 @@
 package com.lch.netkit.v2.common;
 
-import android.support.annotation.Nullable;
+
+import androidx.annotation.Nullable;
 
 public abstract class RequestCallback<DATA> {
 

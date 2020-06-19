@@ -16,8 +16,9 @@ package com.lch.netkit.v2.filerequest.transfer;
  *
  */
 
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import com.lch.netkit.v2.common.Cancelable;
 import com.lch.netkit.v2.common.NetworkResponse;
@@ -36,6 +37,7 @@ public interface FileTransfer {
     @Nullable
     <T> Cancelable uploadFile(UploadFileParams fileParams, final Parser<T> parser, final UploadFileCallback<T> listener);
 
+
     @NonNull
     <T> NetworkResponse<T> syncUploadFile(UploadFileParams fileParams, final Parser<T> parser);
 
@@ -45,6 +47,7 @@ public interface FileTransfer {
 
     @NonNull
     NetworkResponse<File> syncDownloadFile(DownloadFileParams fileParams);
+
 
 
 }

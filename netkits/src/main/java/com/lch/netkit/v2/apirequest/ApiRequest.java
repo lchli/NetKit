@@ -1,13 +1,15 @@
 package com.lch.netkit.v2.apirequest;
 
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import com.lch.netkit.v2.NetKit;
 import com.lch.netkit.v2.common.Cancelable;
 import com.lch.netkit.v2.common.NetKitException;
 import com.lch.netkit.v2.common.NetworkResponse;
 import com.lch.netkit.v2.common.RequestCallback;
+import com.lch.netkit.v2.parser.ModelParser;
 import com.lch.netkit.v2.parser.Parser;
 import com.lch.netkit.v2.util.ShareConstants;
 import com.lch.netkit.v2.util.StreamUtils;
@@ -42,6 +44,12 @@ public class ApiRequest {
         return asyncRequestImpl(params, parser, callback, false);
     }
 
+    @Nullable
+    public <T> Cancelable asyncGet(@NonNull final ApiRequestParams params, @NonNull final Class<T> resultClass, final RequestCallback<T> callback) {
+        return asyncRequestImpl(params, new ModelParser<>(resultClass), callback, false);
+    }
+
+
 
     /**
      * 异步网络post请求。
@@ -55,6 +63,11 @@ public class ApiRequest {
     @Nullable
     public <T> Cancelable asyncPost(@NonNull final ApiRequestParams params, @NonNull final Parser<T> parser, final RequestCallback<T> callback) {
         return asyncRequestImpl(params, parser, callback, true);
+    }
+
+    @Nullable
+    public <T> Cancelable asyncPost(@NonNull final ApiRequestParams params, @NonNull final Class<T> resultClass, final RequestCallback<T> callback) {
+        return asyncRequestImpl(params, new ModelParser<>(resultClass), callback, true);
     }
 
     private <T> Cancelable asyncRequestImpl(@NonNull final ApiRequestParams params, @NonNull final Parser<T> parser, final RequestCallback<T> callback, final boolean isPost) {
@@ -123,6 +136,11 @@ public class ApiRequest {
         return syncRequestImpl(params, parser, false);
     }
 
+    @NonNull
+    public <T> NetworkResponse<T> syncGet(@NonNull final ApiRequestParams params, @NonNull final Class<T> resultClass) {
+        return syncRequestImpl(params, new ModelParser<>(resultClass), false);
+    }
+
     /**
      * 同步网络post请求。
      *
@@ -134,6 +152,11 @@ public class ApiRequest {
     @NonNull
     public <T> NetworkResponse<T> syncPost(@NonNull final ApiRequestParams params, @NonNull final Parser<T> parser) {
         return syncRequestImpl(params, parser, true);
+    }
+
+    @NonNull
+    public <T> NetworkResponse<T> syncPost(@NonNull final ApiRequestParams params, @NonNull final Class<T> resultClass) {
+        return syncRequestImpl(params, new ModelParser<>(resultClass), true);
     }
 
     private <T> NetworkResponse<T> syncRequestImpl(@NonNull final ApiRequestParams params, @NonNull final Parser<T> parser, boolean isPost) {

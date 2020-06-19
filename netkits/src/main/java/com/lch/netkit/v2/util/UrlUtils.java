@@ -1,6 +1,7 @@
 package com.lch.netkit.v2.util;
 
-import android.support.annotation.Nullable;
+
+import androidx.annotation.Nullable;
 
 import java.net.URL;
 

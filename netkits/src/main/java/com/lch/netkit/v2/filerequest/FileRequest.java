@@ -17,14 +17,16 @@ package com.lch.netkit.v2.filerequest;
  */
 
 import android.content.Context;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import com.lch.netkit.v2.common.Cancelable;
 import com.lch.netkit.v2.common.NetworkResponse;
 import com.lch.netkit.v2.filerequest.transfer.FileTransfer;
 import com.lch.netkit.v2.filerequest.transfer.impl.BBTFileTransfer;
 import com.lch.netkit.v2.filerequest.transfer.impl.QiniuFileTransfer;
+import com.lch.netkit.v2.parser.ModelParser;
 import com.lch.netkit.v2.parser.Parser;
 
 import java.io.File;
@@ -33,7 +35,7 @@ import java.io.File;
 /**
  * 文件传输管理器。
  */
-public class FileRequest implements FileTransfer {
+public class FileRequest {
 
     private FileTransfer mBBTFileTransfer;
 
@@ -59,6 +61,12 @@ public class FileRequest implements FileTransfer {
 
     }
 
+    @Nullable
+    public <T> Cancelable uploadFile(@NonNull UploadFileParams fileParams, @NonNull final Class<T> resultClass, final UploadFileCallback<T> listener) {
+        return chooseFileTransfer(fileParams.getServerType()).uploadFile(fileParams, new ModelParser<>(resultClass), listener);
+
+    }
+
     /**
      * 下载文件。
      *
@@ -72,14 +80,19 @@ public class FileRequest implements FileTransfer {
 
     }
 
+
     @NonNull
-    @Override
     public <T> NetworkResponse<T> syncUploadFile(UploadFileParams fileParams, Parser<T> parser) {
         return chooseFileTransfer(fileParams.getServerType()).syncUploadFile(fileParams, parser);
     }
 
+
     @NonNull
-    @Override
+    public <T> NetworkResponse<T> syncUploadFile(UploadFileParams fileParams, Class<T> resultClass) {
+        return chooseFileTransfer(fileParams.getServerType()).syncUploadFile(fileParams, new ModelParser<>(resultClass));
+    }
+
+    @NonNull
     public NetworkResponse<File> syncDownloadFile(DownloadFileParams fileParams) {
         return mBBTFileTransfer.syncDownloadFile(fileParams);
     }

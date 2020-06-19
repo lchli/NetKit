@@ -1,12 +1,15 @@
 package com.lch.netkit.demo;
 
 import android.os.Bundle;
-import android.support.annotation.Nullable;
-import android.support.v7.app.AppCompatActivity;
+
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
 
 import com.lch.netkit.v2.NetKit;
 import com.lch.netkit.v2.apirequest.ApiRequestParams;
+import com.lch.netkit.v2.common.NetworkResponse;
 import com.lch.netkit.v2.common.RequestCallback;
+import com.lch.netkit.v2.parser.ModelParser;
 import com.lch.netkit.v2.parser.Parser;
 
 public class MainActivity extends AppCompatActivity {
@@ -20,23 +23,28 @@ public class MainActivity extends AppCompatActivity {
         NetKit.init(this);
 
 
-        NetKit.apiRequest().asyncGet(new ApiRequestParams().setUrl("http://api.babytree.com/api/mobile_baby/set_baby_info?pwd=123&name=lich"), new Parser<String>() {
-            @Override
-            public String parse(String responseString) {
-                return null;
-            }
-        }, new RequestCallback<String>() {
-            @Override
-            public void onSuccess(String httpCode, @Nullable String s) {
+        NetKit.apiRequest().asyncGet(new ApiRequestParams().setUrl("http://api.babytree.com/api/mobile_baby/set_baby_info?pwd=123&name=lich"),
+               User.class, new RequestCallback<User>() {
+                    @Override
+                    public void onSuccess(String httpCode, @Nullable User user) {
 
-            }
+                    }
 
-            @Override
-            public void onError(String httpCode, String msg) {
+                    @Override
+                    public void onError(String httpCode, String msg) {
 
-            }
-        });
+                    }
+                });
 
+
+        NetworkResponse<User> resp = NetKit.apiRequest().syncGet(new ApiRequestParams().setUrl("http://api.babytree.com/api/mobile_baby/set_baby_info?pwd=123&name=lich"),
+                User.class);
+
+
+
+    }
+
+    static class User{
 
     }
 }

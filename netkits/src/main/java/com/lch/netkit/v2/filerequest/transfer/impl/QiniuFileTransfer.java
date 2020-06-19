@@ -17,7 +17,8 @@ package com.lch.netkit.v2.filerequest.transfer.impl;
  */
 
 import android.content.Context;
-import android.support.annotation.NonNull;
+
+import androidx.annotation.NonNull;
 
 import com.lch.netkit.v2.common.Cancelable;
 import com.lch.netkit.v2.common.NetKitException;
