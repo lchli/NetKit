@@ -21,6 +21,9 @@ import java.util.concurrent.TimeUnit;
 import okhttp3.OkHttpClient;
 import okhttp3.internal.Util;
 
+/**
+ * 网络请求入口类。
+ */
 public final class NetKit {
 
     private static final String TAG = "NetKit";
@@ -109,6 +112,11 @@ public final class NetKit {
         logEnable = enable;
     }
 
+    /**
+     * 设置请求拦截器。可用于添加公共参数等。
+     *
+     * @param apiInterceptor
+     */
     public static void setApiInterceptor(ApiInterceptor apiInterceptor) {
         NetKit.apiInterceptor = apiInterceptor;
     }
