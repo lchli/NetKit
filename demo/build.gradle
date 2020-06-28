@@ -37,5 +37,5 @@ dependencies {
     implementation 'androidx.constraintlayout:constraintlayout:1.1.3'
 
     implementation project(':netkits')
-    //compile 'com.github.lchli:NetKit:1.0.0'
+    //implementation 'com.github.lchli:NetKit:4.0.0-beta'
 }

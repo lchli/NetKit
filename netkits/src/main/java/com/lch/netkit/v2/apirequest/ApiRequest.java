@@ -11,6 +11,7 @@ import com.lch.netkit.v2.common.NetworkResponse;
 import com.lch.netkit.v2.common.RequestCallback;
 import com.lch.netkit.v2.parser.ModelParser;
 import com.lch.netkit.v2.parser.Parser;
+import com.lch.netkit.v2.util.HttpMethodType;
 import com.lch.netkit.v2.util.ShareConstants;
 import com.lch.netkit.v2.util.StreamUtils;
 
@@ -41,14 +42,13 @@ public class ApiRequest {
      */
     @Nullable
     public <T> Cancelable asyncGet(@NonNull final ApiRequestParams params, @NonNull final Parser<T> parser, final RequestCallback<T> callback) {
-        return asyncRequestImpl(params, parser, callback, false);
+        return asyncRequestImpl(params, parser, callback, HttpMethodType.GET);
     }
 
     @Nullable
     public <T> Cancelable asyncGet(@NonNull final ApiRequestParams params, @NonNull final Class<T> resultClass, final RequestCallback<T> callback) {
-        return asyncRequestImpl(params, new ModelParser<>(resultClass), callback, false);
+        return asyncRequestImpl(params, new ModelParser<>(resultClass), callback, HttpMethodType.GET);
     }
-
 
 
     /**
@@ -62,15 +62,15 @@ public class ApiRequest {
      */
     @Nullable
     public <T> Cancelable asyncPost(@NonNull final ApiRequestParams params, @NonNull final Parser<T> parser, final RequestCallback<T> callback) {
-        return asyncRequestImpl(params, parser, callback, true);
+        return asyncRequestImpl(params, parser, callback, HttpMethodType.POST);
     }
 
     @Nullable
     public <T> Cancelable asyncPost(@NonNull final ApiRequestParams params, @NonNull final Class<T> resultClass, final RequestCallback<T> callback) {
-        return asyncRequestImpl(params, new ModelParser<>(resultClass), callback, true);
+        return asyncRequestImpl(params, new ModelParser<>(resultClass), callback, HttpMethodType.POST);
     }
 
-    private <T> Cancelable asyncRequestImpl(@NonNull final ApiRequestParams params, @NonNull final Parser<T> parser, final RequestCallback<T> callback, final boolean isPost) {
+    public <T> Cancelable asyncRequestImpl(@NonNull final ApiRequestParams params, @NonNull final Parser<T> parser, final RequestCallback<T> callback, final HttpMethodType methodType) {
         final Cancelable cancelable = new Cancelable();
 
         NetKit.Internal.runAsync(new Runnable() {
@@ -83,7 +83,7 @@ public class ApiRequest {
 
                 try {
 
-                    response = executeOkhttp(params, isPost, cancelable);
+                    response = executeOkhttp(NetKit.Internal.interceptApiRequestParams(params), methodType, cancelable);
                     responseCode = response.code() + "";
 
                     if (!response.isSuccessful()) {
@@ -97,7 +97,7 @@ public class ApiRequest {
                         return;
                     }
 
-                    final String bodystring = body.string();
+                    final String bodystring = NetKit.Internal.interceptResponse(body.string());
 
                     onSuccess(responseCode, parser.parse(bodystring), callback);
 
@@ -133,12 +133,12 @@ public class ApiRequest {
      */
     @NonNull
     public <T> NetworkResponse<T> syncGet(@NonNull final ApiRequestParams params, @NonNull final Parser<T> parser) {
-        return syncRequestImpl(params, parser, false);
+        return syncRequestImpl(params, parser, HttpMethodType.GET);
     }
 
     @NonNull
     public <T> NetworkResponse<T> syncGet(@NonNull final ApiRequestParams params, @NonNull final Class<T> resultClass) {
-        return syncRequestImpl(params, new ModelParser<>(resultClass), false);
+        return syncRequestImpl(params, new ModelParser<>(resultClass), HttpMethodType.GET);
     }
 
     /**
@@ -151,20 +151,20 @@ public class ApiRequest {
      */
     @NonNull
     public <T> NetworkResponse<T> syncPost(@NonNull final ApiRequestParams params, @NonNull final Parser<T> parser) {
-        return syncRequestImpl(params, parser, true);
+        return syncRequestImpl(params, parser, HttpMethodType.POST);
     }
 
     @NonNull
     public <T> NetworkResponse<T> syncPost(@NonNull final ApiRequestParams params, @NonNull final Class<T> resultClass) {
-        return syncRequestImpl(params, new ModelParser<>(resultClass), true);
+        return syncRequestImpl(params, new ModelParser<>(resultClass), HttpMethodType.POST);
     }
 
-    private <T> NetworkResponse<T> syncRequestImpl(@NonNull final ApiRequestParams params, @NonNull final Parser<T> parser, boolean isPost) {
+    public <T> NetworkResponse<T> syncRequestImpl(@NonNull ApiRequestParams params, @NonNull final Parser<T> parser, HttpMethodType methodType) {
         final NetworkResponse<T> responseValue = new NetworkResponse<>();
         Response response = null;
 
         try {
-            response = executeOkhttp(params, isPost, null);
+            response = executeOkhttp(NetKit.Internal.interceptApiRequestParams(params), methodType, null);
             responseValue.httpCode = response.code() + "";
 
             if (!response.isSuccessful()) {
@@ -178,7 +178,7 @@ public class ApiRequest {
                 return responseValue;
             }
 
-            String bodystring = body.string();
+            String bodystring = NetKit.Internal.interceptResponse(body.string());
 
             responseValue.data = parser.parse(bodystring);
 
@@ -201,7 +201,7 @@ public class ApiRequest {
 
     }
 
-    private Response executeOkhttp(@NonNull final ApiRequestParams params, boolean isPost, @Nullable Cancelable cancelable) throws IOException {
+    private Response executeOkhttp(@NonNull final ApiRequestParams params, HttpMethodType methodType, @Nullable Cancelable cancelable) throws IOException {
         final Request.Builder requestBuilder = new Request.Builder();
 
         Map<String, String> headers = params.headers();
@@ -213,43 +213,63 @@ public class ApiRequest {
         }
         String url = params.getUrl();
 
-        if (isPost) {//post
-            if (params.getRequestBody() != null) {
-                requestBuilder.url(url).post(params.getRequestBody());
-            } else {
-                FormBody.Builder formBuilder = new FormBody.Builder();
+        switch (methodType) {
+            case POST:
+                if (params.getRequestBody() != null) {
+                    requestBuilder.url(url).post(params.getRequestBody());
+                } else {
+                    FormBody.Builder formBuilder = new FormBody.Builder();
+                    Map<String, String> paramIter = params.params();
+                    for (Map.Entry<String, String> entry : paramIter.entrySet()) {
+                        if (entry.getKey() != null) {
+                            formBuilder.add(entry.getKey(), entry.getValue());
+                        }
+
+                    }
+                    requestBuilder.url(url).post(formBuilder.build());
+                }
+                break;
+            case GET:
+                if (!url.contains("?")) {
+                    url += "?";
+                }
+                if (!url.endsWith("?")) {
+                    url += "&";
+                }
+                StringBuilder sb = new StringBuilder(url);
                 Map<String, String> paramIter = params.params();
                 for (Map.Entry<String, String> entry : paramIter.entrySet()) {
                     if (entry.getKey() != null) {
-                        formBuilder.add(entry.getKey(), entry.getValue());
+                        sb.append(entry.getKey()).append("=").append(entry.getValue()).append("&");
                     }
-
                 }
-                requestBuilder.url(url).post(formBuilder.build());
-            }
+                url = sb.toString();
 
-        } else {//get
-            if (!url.contains("?")) {
-                url += "?";
-            }
-            if (!url.endsWith("?")) {
-                url += "&";
-            }
-            StringBuilder sb = new StringBuilder(url);
-            Map<String, String> paramIter = params.params();
-            for (Map.Entry<String, String> entry : paramIter.entrySet()) {
-                if (entry.getKey() != null) {
-                    sb.append(entry.getKey()).append("=").append(entry.getValue()).append("&");
+                if (url.endsWith("&")) {
+                    url = url.substring(0, url.length() - 1);
                 }
-            }
-            url = sb.toString();
 
-            if (url.endsWith("&")) {
-                url = url.substring(0, url.length() - 1);
-            }
+                requestBuilder.url(url)
+                        .get();
+                break;
 
-            requestBuilder.url(url)
-                    .get();
+            case PUT:
+                requestBuilder.url(url).put(params.getRequestBody());
+                break;
+            case DELETE:
+                if (params.getRequestBody() != null) {
+                    requestBuilder.url(url).delete(params.getRequestBody());
+                } else {
+                    requestBuilder.url(url).delete();
+                }
+                break;
+            case PATCH:
+                requestBuilder.url(url).patch(params.getRequestBody());
+                break;
+            case HEAD:
+                requestBuilder.url(url).head();
+                break;
+
         }
 
         Call call = NetKit.client().newCall(requestBuilder.build());

@@ -6,7 +6,11 @@ import android.content.Context;
 import androidx.annotation.NonNull;
 
 import com.lch.netkit.v2.apirequest.ApiRequest;
+import com.lch.netkit.v2.apirequest.ApiRequestParams;
+import com.lch.netkit.v2.filerequest.DownloadFileParams;
 import com.lch.netkit.v2.filerequest.FileRequest;
+import com.lch.netkit.v2.filerequest.UploadFileParams;
+import com.lch.netkit.v2.okinterceptor.ApiInterceptor;
 import com.lch.netkit.v2.okinterceptor.GzipRequestInterceptor;
 import com.lch.netkit.v2.okinterceptor.LogInterceptorFactory;
 import com.lch.netkit.v2.util.UiThread;
@@ -31,6 +35,7 @@ public final class NetKit {
 
     private static boolean logEnable = false;
     private static OkHttpClient client;
+    private static ApiInterceptor apiInterceptor;
 
     /**
      * 初始化。使用默认的okhttp builder。
@@ -106,6 +111,9 @@ public final class NetKit {
         logEnable = enable;
     }
 
+    public static void setApiInterceptor(ApiInterceptor apiInterceptor) {
+        NetKit.apiInterceptor = apiInterceptor;
+    }
 
     public static final class Internal {
 
@@ -125,7 +133,41 @@ public final class NetKit {
             return logEnable;
         }
 
+        public static ApiRequestParams interceptApiRequestParams(ApiRequestParams requestParams) {
+            if (apiInterceptor != null) {
+                ApiRequestParams after = apiInterceptor.interceptApiRequestParams(requestParams);
+                return after != null ? after : requestParams;
+            } else {
+                return requestParams;
+            }
+        }
 
+        public static UploadFileParams interceptUploadFileParams(@NonNull UploadFileParams requestParams) {
+            if (apiInterceptor != null) {
+                UploadFileParams after = apiInterceptor.interceptUploadFileParams(requestParams);
+                return after != null ? after : requestParams;
+            } else {
+                return requestParams;
+            }
+        }
+
+        public static DownloadFileParams interceptDownloadFileParams(@NonNull DownloadFileParams requestParams) {
+            if (apiInterceptor != null) {
+                DownloadFileParams after = apiInterceptor.interceptDownloadFileParams(requestParams);
+                return after != null ? after : requestParams;
+            } else {
+                return requestParams;
+            }
+        }
+
+
+        public static String interceptResponse(String responseString) {
+            if (apiInterceptor != null) {
+                return apiInterceptor.interceptResponse(responseString);
+            } else {
+                return responseString;
+            }
+        }
     }
 
 

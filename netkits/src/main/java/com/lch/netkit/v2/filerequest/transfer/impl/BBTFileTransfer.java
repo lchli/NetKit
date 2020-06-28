@@ -73,15 +73,15 @@ public class BBTFileTransfer implements FileTransfer {
 
 
     @Override
-    public <T> Cancelable uploadFile(@NonNull final UploadFileParams fileParams, @NonNull final Parser<T> parser, final UploadFileCallback<T> listener) {
+    public <T> Cancelable uploadFile(@NonNull final UploadFileParams fileParamsRaw, @NonNull final Parser<T> parser, final UploadFileCallback<T> listener) {
 
-        final List<FileOptions> filesIter = fileParams.files();
+        final List<FileOptions> filesIter = fileParamsRaw.files();
         if (filesIter.isEmpty()) {
             onError(ShareConstants.HTTP_ERR_CODE_UNKNOWN, "files is empty.", listener);
             return null;
         }
 
-        if (TextUtils.isEmpty(fileParams.getUrl())) {
+        if (TextUtils.isEmpty(fileParamsRaw.getUrl())) {
             onError(ShareConstants.HTTP_ERR_CODE_UNKNOWN, "uploadUrl is empty.", listener);
             return null;
         }
@@ -95,6 +95,8 @@ public class BBTFileTransfer implements FileTransfer {
                 String responseCode = ShareConstants.HTTP_ERR_CODE_UNKNOWN;
 
                 try {
+
+                    final UploadFileParams fileParams = NetKit.Internal.interceptUploadFileParams(fileParamsRaw);
 
                     MultipartBody.Builder builder = new MultipartBody.Builder();
                     builder.setType(MultipartBody.FORM);
@@ -176,7 +178,7 @@ public class BBTFileTransfer implements FileTransfer {
                         return;
                     }
 
-                    onSuccess(responseCode, parser.parse(body.string()), listener);
+                    onSuccess(responseCode, parser.parse(NetKit.Internal.interceptResponse(body.string())), listener);
 
                 } catch (final Throwable e) {
                     e.printStackTrace();
@@ -204,6 +206,7 @@ public class BBTFileTransfer implements FileTransfer {
         Response response = null;
 
         try {
+            fileParams = NetKit.Internal.interceptUploadFileParams(fileParams);
 
             final List<FileOptions> filesIter = fileParams.files();
             if (filesIter.isEmpty()) {
@@ -288,7 +291,7 @@ public class BBTFileTransfer implements FileTransfer {
                 networkResponse.setErrorMsg("response body is null.");
                 return networkResponse;
             }
-            networkResponse.data = parser.parse(body.string());
+            networkResponse.data = parser.parse(NetKit.Internal.interceptResponse(body.string()));
 
             return networkResponse;
 
@@ -309,14 +312,14 @@ public class BBTFileTransfer implements FileTransfer {
     }
 
     @Override
-    public Cancelable downloadFile(@NonNull final DownloadFileParams fileParams, final DownloadFileCallback listener) {
+    public Cancelable downloadFile(@NonNull final DownloadFileParams fileParamsRaw, final DownloadFileCallback listener) {
 
-        if (TextUtils.isEmpty(fileParams.getUrl())) {
+        if (TextUtils.isEmpty(fileParamsRaw.getUrl())) {
             onError(ShareConstants.HTTP_ERR_CODE_UNKNOWN, "file url is empty.", listener);
             return null;
         }
 
-        if (TextUtils.isEmpty(fileParams.getSaveDir())) {
+        if (TextUtils.isEmpty(fileParamsRaw.getSaveDir())) {
             onError(ShareConstants.HTTP_ERR_CODE_UNKNOWN, "file save dir is invalid.", listener);
             return null;
         }
@@ -332,6 +335,7 @@ public class BBTFileTransfer implements FileTransfer {
                 String code = ShareConstants.HTTP_ERR_CODE_UNKNOWN;
 
                 try {
+                    final DownloadFileParams fileParams = NetKit.Internal.interceptDownloadFileParams(fileParamsRaw);
 
                     final Request.Builder requestBuilder = new Request.Builder();
 
@@ -466,6 +470,8 @@ public class BBTFileTransfer implements FileTransfer {
         Response response = null;
 
         try {
+
+            fileParams = NetKit.Internal.interceptDownloadFileParams(fileParams);
 
             if (TextUtils.isEmpty(fileParams.getUrl())) {
                 networkResponse.setErrorMsg("file url is empty.");
