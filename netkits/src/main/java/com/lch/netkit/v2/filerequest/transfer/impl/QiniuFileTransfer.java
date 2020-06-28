@@ -20,15 +20,14 @@ import android.content.Context;
 
 import androidx.annotation.NonNull;
 
+import com.lch.netkit.v2.apirequest.ApiRequestParams;
 import com.lch.netkit.v2.common.Cancelable;
 import com.lch.netkit.v2.common.NetKitException;
 import com.lch.netkit.v2.common.NetworkResponse;
 import com.lch.netkit.v2.filerequest.DownloadFileCallback;
-import com.lch.netkit.v2.filerequest.DownloadFileParams;
 import com.lch.netkit.v2.filerequest.FileOptions;
 import com.lch.netkit.v2.filerequest.QiNiuParam;
 import com.lch.netkit.v2.filerequest.UploadFileCallback;
-import com.lch.netkit.v2.filerequest.UploadFileParams;
 import com.lch.netkit.v2.filerequest.transfer.FileTransfer;
 import com.lch.netkit.v2.parser.Parser;
 import com.lch.netkit.v2.util.NetworkLog;
@@ -54,6 +53,7 @@ import static com.lch.netkit.v2.util.CallbackUtil.onSuccess;
 /**
  * 七牛文件传输器实现。
  */
+@Deprecated
 public class QiniuFileTransfer implements FileTransfer {
     private static final String TAG = "QiniuFileTransfer";
 
@@ -70,7 +70,7 @@ public class QiniuFileTransfer implements FileTransfer {
     }
 
     @Override
-    public <T> Cancelable uploadFile(@NonNull final UploadFileParams fileParams, @NonNull final Parser<T> parser, final UploadFileCallback<T> listener) {
+    public <T> Cancelable uploadFile(@NonNull final ApiRequestParams fileParams, @NonNull final Parser<T> parser, final UploadFileCallback<T> listener) {
 
         List<FileOptions> fileIter = fileParams.files();
         if (fileIter.isEmpty()) {
@@ -194,7 +194,7 @@ public class QiniuFileTransfer implements FileTransfer {
 
     @NonNull
     @Override
-    public <T> NetworkResponse<T> syncUploadFile(UploadFileParams fileParams, final Parser<T> parser) {
+    public <T> NetworkResponse<T> syncUploadFile(ApiRequestParams fileParams, final Parser<T> parser) {
         final NetworkResponse<T> networkResponse = new NetworkResponse<>();
 
         List<FileOptions> fileIter = fileParams.files();
@@ -342,13 +342,13 @@ public class QiniuFileTransfer implements FileTransfer {
     }
 
     @Override
-    public Cancelable downloadFile(DownloadFileParams fileParams, DownloadFileCallback listener) {
+    public Cancelable downloadFile(ApiRequestParams fileParams, DownloadFileCallback listener) {
         throw new UnsupportedOperationException("qi niu do not support download file now.");
     }
 
     @NonNull
     @Override
-    public NetworkResponse<File> syncDownloadFile(DownloadFileParams fileParams) {
+    public NetworkResponse<File> syncDownloadFile(ApiRequestParams fileParams) {
         throw new UnsupportedOperationException("qi niu do not support download file now.");
     }
 }

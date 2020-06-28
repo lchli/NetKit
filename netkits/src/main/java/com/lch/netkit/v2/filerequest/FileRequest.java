@@ -21,6 +21,7 @@ import android.content.Context;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.lch.netkit.v2.apirequest.ApiRequestParams;
 import com.lch.netkit.v2.common.Cancelable;
 import com.lch.netkit.v2.common.NetworkResponse;
 import com.lch.netkit.v2.filerequest.transfer.FileTransfer;
@@ -56,13 +57,13 @@ public class FileRequest {
      * @return 可取消请求的对象。
      */
     @Nullable
-    public <T> Cancelable uploadFile(@NonNull UploadFileParams fileParams, @NonNull final Parser<T> parser, final UploadFileCallback<T> listener) {
+    public <T> Cancelable uploadFile(@NonNull ApiRequestParams fileParams, @NonNull final Parser<T> parser, final UploadFileCallback<T> listener) {
         return chooseFileTransfer(fileParams.getServerType()).uploadFile(fileParams, parser, listener);
 
     }
 
     @Nullable
-    public <T> Cancelable uploadFile(@NonNull UploadFileParams fileParams, @NonNull final Class<T> resultClass, final UploadFileCallback<T> listener) {
+    public <T> Cancelable uploadFile(@NonNull ApiRequestParams fileParams, @NonNull final Class<T> resultClass, final UploadFileCallback<T> listener) {
         return chooseFileTransfer(fileParams.getServerType()).uploadFile(fileParams, new ModelParser<>(resultClass), listener);
 
     }
@@ -75,30 +76,30 @@ public class FileRequest {
      * @return 可取消请求的对象。
      */
     @Nullable
-    public Cancelable downloadFile(@NonNull DownloadFileParams fileParams, final DownloadFileCallback listener) {
+    public Cancelable downloadFile(@NonNull ApiRequestParams fileParams, final DownloadFileCallback listener) {
         return mBBTFileTransfer.downloadFile(fileParams, listener);
 
     }
 
 
     @NonNull
-    public <T> NetworkResponse<T> syncUploadFile(UploadFileParams fileParams, Parser<T> parser) {
+    public <T> NetworkResponse<T> syncUploadFile(ApiRequestParams fileParams, Parser<T> parser) {
         return chooseFileTransfer(fileParams.getServerType()).syncUploadFile(fileParams, parser);
     }
 
 
     @NonNull
-    public <T> NetworkResponse<T> syncUploadFile(UploadFileParams fileParams, Class<T> resultClass) {
+    public <T> NetworkResponse<T> syncUploadFile(ApiRequestParams fileParams, Class<T> resultClass) {
         return chooseFileTransfer(fileParams.getServerType()).syncUploadFile(fileParams, new ModelParser<>(resultClass));
     }
 
     @NonNull
-    public NetworkResponse<File> syncDownloadFile(DownloadFileParams fileParams) {
+    public NetworkResponse<File> syncDownloadFile(ApiRequestParams fileParams) {
         return mBBTFileTransfer.syncDownloadFile(fileParams);
     }
 
 
-    private FileTransfer chooseFileTransfer(UploadFileParams.ServerType serverType) {
+    private FileTransfer chooseFileTransfer(ApiRequestParams.ServerType serverType) {
         switch (serverType) {
             case QI_NIU:
                 return mQiniuFileTransfer;

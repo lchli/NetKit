@@ -21,20 +21,18 @@ import android.text.TextUtils;
 import androidx.annotation.NonNull;
 
 import com.lch.netkit.v2.NetKit;
+import com.lch.netkit.v2.apirequest.ApiRequestParams;
 import com.lch.netkit.v2.common.Cancelable;
 import com.lch.netkit.v2.common.NetKitException;
 import com.lch.netkit.v2.common.NetworkResponse;
 import com.lch.netkit.v2.filerequest.DownloadFileCallback;
-import com.lch.netkit.v2.filerequest.DownloadFileParams;
 import com.lch.netkit.v2.filerequest.FileOptions;
 import com.lch.netkit.v2.filerequest.UploadFileCallback;
-import com.lch.netkit.v2.filerequest.UploadFileParams;
 import com.lch.netkit.v2.filerequest.transfer.FileTransfer;
 import com.lch.netkit.v2.parser.Parser;
 import com.lch.netkit.v2.util.NetworkLog;
 import com.lch.netkit.v2.util.ShareConstants;
 import com.lch.netkit.v2.util.StreamUtils;
-import com.lch.netkit.v2.util.StringTool;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -73,7 +71,7 @@ public class BBTFileTransfer implements FileTransfer {
 
 
     @Override
-    public <T> Cancelable uploadFile(@NonNull final UploadFileParams fileParamsRaw, @NonNull final Parser<T> parser, final UploadFileCallback<T> listener) {
+    public <T> Cancelable uploadFile(@NonNull final ApiRequestParams fileParamsRaw, @NonNull final Parser<T> parser, final UploadFileCallback<T> listener) {
 
         final List<FileOptions> filesIter = fileParamsRaw.files();
         if (filesIter.isEmpty()) {
@@ -96,7 +94,7 @@ public class BBTFileTransfer implements FileTransfer {
 
                 try {
 
-                    final UploadFileParams fileParams = NetKit.Internal.interceptUploadFileParams(fileParamsRaw);
+                    final ApiRequestParams fileParams = NetKit.Internal.interceptApiRequestParams(fileParamsRaw);
 
                     MultipartBody.Builder builder = new MultipartBody.Builder();
                     builder.setType(MultipartBody.FORM);
@@ -201,12 +199,12 @@ public class BBTFileTransfer implements FileTransfer {
 
     @NonNull
     @Override
-    public <T> NetworkResponse<T> syncUploadFile(UploadFileParams fileParams, Parser<T> parser) {
+    public <T> NetworkResponse<T> syncUploadFile(ApiRequestParams fileParams, Parser<T> parser) {
         NetworkResponse<T> networkResponse = new NetworkResponse<>();
         Response response = null;
 
         try {
-            fileParams = NetKit.Internal.interceptUploadFileParams(fileParams);
+            fileParams = NetKit.Internal.interceptApiRequestParams(fileParams);
 
             final List<FileOptions> filesIter = fileParams.files();
             if (filesIter.isEmpty()) {
@@ -258,7 +256,7 @@ public class BBTFileTransfer implements FileTransfer {
 
             Request request = requestBuilder
                     .url(fileParams.getUrl())
-                    .post(new CountingRequestBody(requestBody, new CountingRequestBody.Listener() {
+                    .post(new CountingRequestBody(requestBody, new BBTFileTransfer.CountingRequestBody.Listener() {
                         float previousPercent = 0;
 
                         @Override
@@ -312,14 +310,14 @@ public class BBTFileTransfer implements FileTransfer {
     }
 
     @Override
-    public Cancelable downloadFile(@NonNull final DownloadFileParams fileParamsRaw, final DownloadFileCallback listener) {
+    public Cancelable downloadFile(@NonNull final ApiRequestParams fileParamsRaw, final DownloadFileCallback listener) {
 
         if (TextUtils.isEmpty(fileParamsRaw.getUrl())) {
             onError(ShareConstants.HTTP_ERR_CODE_UNKNOWN, "file url is empty.", listener);
             return null;
         }
 
-        if (TextUtils.isEmpty(fileParamsRaw.getSaveDir())) {
+        if (TextUtils.isEmpty(fileParamsRaw.getDownloadFileSavePath())) {
             onError(ShareConstants.HTTP_ERR_CODE_UNKNOWN, "file save dir is invalid.", listener);
             return null;
         }
@@ -335,7 +333,7 @@ public class BBTFileTransfer implements FileTransfer {
                 String code = ShareConstants.HTTP_ERR_CODE_UNKNOWN;
 
                 try {
-                    final DownloadFileParams fileParams = NetKit.Internal.interceptDownloadFileParams(fileParamsRaw);
+                    final ApiRequestParams fileParams = NetKit.Internal.interceptApiRequestParams(fileParamsRaw);
 
                     final Request.Builder requestBuilder = new Request.Builder();
 
@@ -371,9 +369,13 @@ public class BBTFileTransfer implements FileTransfer {
                     long totalLen = getUrlContentLength(fileParams.getUrl());
                     log("totalLen=%d", totalLen);
 
-                    final String saveFileName = StringTool.md5(fileParams.getUrl()) + getNameFromUrl(fileParams.getUrl());
-                    createFileIfNotExist(fileParams.getSaveDir());
-                    final File saveFile = createFileIfNotExist(fileParams.getSaveDir() + "/" + saveFileName);
+                    final String saveFileName = fileParams.getDownloadFileSavePath();
+                    File dir = new File(saveFileName).getParentFile();
+                    if (dir != null) {
+                        createFileIfNotExist(dir.getAbsolutePath());
+                    }
+
+                    final File saveFile = createFileIfNotExist(saveFileName);
                     log("saveFile=%s", saveFile.getAbsolutePath());
 
                     long downloadedLength = saveFile.length();
@@ -463,7 +465,7 @@ public class BBTFileTransfer implements FileTransfer {
 
     @NonNull
     @Override
-    public NetworkResponse<File> syncDownloadFile(DownloadFileParams fileParams) {
+    public NetworkResponse<File> syncDownloadFile(ApiRequestParams fileParams) {
         NetworkResponse<File> networkResponse = new NetworkResponse<>();
         InputStream is = null;
         FileOutputStream fos = null;
@@ -471,14 +473,14 @@ public class BBTFileTransfer implements FileTransfer {
 
         try {
 
-            fileParams = NetKit.Internal.interceptDownloadFileParams(fileParams);
+            fileParams = NetKit.Internal.interceptApiRequestParams(fileParams);
 
             if (TextUtils.isEmpty(fileParams.getUrl())) {
                 networkResponse.setErrorMsg("file url is empty.");
                 return networkResponse;
             }
 
-            if (TextUtils.isEmpty(fileParams.getSaveDir())) {
+            if (TextUtils.isEmpty(fileParams.getDownloadFileSavePath())) {
                 networkResponse.setErrorMsg("file save dir is invalid.");
                 return networkResponse;
             }
@@ -517,9 +519,13 @@ public class BBTFileTransfer implements FileTransfer {
             long totalLen = getUrlContentLength(fileParams.getUrl());
             log("totalLen=%d", totalLen);
 
-            final String saveFileName = StringTool.md5(fileParams.getUrl()) + getNameFromUrl(fileParams.getUrl());
-            createFileIfNotExist(fileParams.getSaveDir());
-            final File saveFile = createFileIfNotExist(fileParams.getSaveDir() + "/" + saveFileName);
+            final String saveFileName = fileParams.getDownloadFileSavePath();
+            File dir = new File(saveFileName).getParentFile();
+            if (dir != null) {
+                createFileIfNotExist(dir.getAbsolutePath());
+            }
+
+            final File saveFile = createFileIfNotExist(saveFileName);
             log("saveFile=%s", saveFile.getAbsolutePath());
 
             long downloadedLength = saveFile.length();

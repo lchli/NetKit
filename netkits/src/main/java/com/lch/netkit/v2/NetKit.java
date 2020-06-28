@@ -7,9 +7,7 @@ import androidx.annotation.NonNull;
 
 import com.lch.netkit.v2.apirequest.ApiRequest;
 import com.lch.netkit.v2.apirequest.ApiRequestParams;
-import com.lch.netkit.v2.filerequest.DownloadFileParams;
 import com.lch.netkit.v2.filerequest.FileRequest;
-import com.lch.netkit.v2.filerequest.UploadFileParams;
 import com.lch.netkit.v2.okinterceptor.ApiInterceptor;
 import com.lch.netkit.v2.okinterceptor.GzipRequestInterceptor;
 import com.lch.netkit.v2.okinterceptor.LogInterceptorFactory;
@@ -141,25 +139,6 @@ public final class NetKit {
                 return requestParams;
             }
         }
-
-        public static UploadFileParams interceptUploadFileParams(@NonNull UploadFileParams requestParams) {
-            if (apiInterceptor != null) {
-                UploadFileParams after = apiInterceptor.interceptUploadFileParams(requestParams);
-                return after != null ? after : requestParams;
-            } else {
-                return requestParams;
-            }
-        }
-
-        public static DownloadFileParams interceptDownloadFileParams(@NonNull DownloadFileParams requestParams) {
-            if (apiInterceptor != null) {
-                DownloadFileParams after = apiInterceptor.interceptDownloadFileParams(requestParams);
-                return after != null ? after : requestParams;
-            } else {
-                return requestParams;
-            }
-        }
-
 
         public static String interceptResponse(String responseString) {
             if (apiInterceptor != null) {
