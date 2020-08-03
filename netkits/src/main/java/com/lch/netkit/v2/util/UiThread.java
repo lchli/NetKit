@@ -9,13 +9,17 @@ import android.os.Looper;
 
 public class UiThread {
 
-    private static final Handler uiHandler = new Handler(Looper.getMainLooper());
+    private static Handler handler = new Handler(Looper.getMainLooper());
 
     public static void run(Runnable r) {
-        if (Looper.myLooper() == Looper.getMainLooper()) {
+        if (Looper.getMainLooper() == Looper.myLooper()) {
             r.run();
-            return;
+        } else {
+            handler.post(r);
         }
-        uiHandler.post(r);
+    }
+
+    public static void run(Runnable r, long delayMills) {
+        handler.postDelayed(r, delayMills);
     }
 }
