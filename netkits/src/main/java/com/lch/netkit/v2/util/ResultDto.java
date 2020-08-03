@@ -4,13 +4,13 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class ResultDto<DATA> {
-    private int code;
+    private String code;
     private String msg;
     private DATA data;
     private boolean hasError = false;
     private final Map<String, Object> extras = new HashMap<>(1);
 
-    public ResultDto(int code, String msg, DATA data) {
+    public ResultDto(String code, String msg, DATA data) {
         this.code = code;
         this.msg = msg;
         this.data = data;
@@ -23,11 +23,11 @@ public class ResultDto<DATA> {
     public ResultDto() {
     }
 
-    public int getCode() {
+    public String getCode() {
         return code;
     }
 
-    public void setCode(int code) {
+    public void setCode(String code) {
         this.code = code;
     }
 
