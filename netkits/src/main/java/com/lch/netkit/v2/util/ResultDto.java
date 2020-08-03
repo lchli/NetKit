@@ -3,24 +3,24 @@ package com.lch.netkit.v2.util;
 import java.util.HashMap;
 import java.util.Map;
 
-public class Result<DATA> {
+public class ResultDto<DATA> {
     private int code;
     private String msg;
     private DATA data;
     private boolean hasError = false;
     private final Map<String, Object> extras = new HashMap<>(1);
 
-    public Result(int code, String msg, DATA data) {
+    public ResultDto(int code, String msg, DATA data) {
         this.code = code;
         this.msg = msg;
         this.data = data;
     }
 
-    public Result(DATA data) {
+    public ResultDto(DATA data) {
         this.data = data;
     }
 
-    public Result() {
+    public ResultDto() {
     }
 
     public int getCode() {
@@ -35,7 +35,7 @@ public class Result<DATA> {
         return msg == null ? "" : msg;
     }
 
-    public Result<DATA> setMsg(String msg) {
+    public ResultDto<DATA> setMsg(String msg) {
         this.msg = msg;
         hasError = true;
         return this;
@@ -45,7 +45,7 @@ public class Result<DATA> {
         return data;
     }
 
-    public Result<DATA> setData(DATA data) {
+    public ResultDto<DATA> setData(DATA data) {
         this.data = data;
         return this;
     }
