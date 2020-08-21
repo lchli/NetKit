@@ -1,7 +1,8 @@
 package com.lch.netkit.v2.util;
 
 
-import androidx.annotation.NonNull;
+
+import android.support.annotation.NonNull;
 
 import org.json.JSONObject;
 

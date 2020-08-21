@@ -17,9 +17,9 @@ package com.lch.netkit.v2.filerequest;
  */
 
 import android.content.Context;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 
 import com.lch.netkit.v2.apirequest.ApiRequestParams;
 import com.lch.netkit.v2.common.Cancelable;

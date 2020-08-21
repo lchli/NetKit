@@ -1,7 +1,8 @@
 package com.lch.netkit.v2.common;
 
 
-import androidx.annotation.NonNull;
+
+import android.support.annotation.NonNull;
 
 import com.lch.netkit.v2.util.ShareConstants;
 

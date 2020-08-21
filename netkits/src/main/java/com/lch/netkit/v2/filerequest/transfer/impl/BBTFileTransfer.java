@@ -16,9 +16,9 @@ package com.lch.netkit.v2.filerequest.transfer.impl;
  *
  */
 
+import android.support.annotation.NonNull;
 import android.text.TextUtils;
 
-import androidx.annotation.NonNull;
 
 import com.lch.netkit.v2.NetKit;
 import com.lch.netkit.v2.apirequest.ApiRequestParams;

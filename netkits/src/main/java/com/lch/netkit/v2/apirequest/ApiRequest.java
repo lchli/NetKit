@@ -1,8 +1,9 @@
 package com.lch.netkit.v2.apirequest;
 
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+
 
 import com.lch.netkit.v2.NetKit;
 import com.lch.netkit.v2.common.Cancelable;
